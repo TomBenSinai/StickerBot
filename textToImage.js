@@ -1,6 +1,8 @@
 const textToImage = require('text-to-image');
+const {UltimateTextToImage} = require("ultimate-text-to-image");
 
 
+//function for mapping
 function scale (number, inMin, inMax, outMin, outMax) {
     return (number - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
 }
@@ -10,6 +12,8 @@ async function textToImageFun(text) {
     let fontSize;
     let lineHeight;
     const textLength = text.length;
+
+    //defining font size and line height depending on text lenth
     if (textLength <= 100) {
        fontSize = Math.floor(scale(textLength, 1, 100, 185, 85));
        lineHeight = Math.floor(scale(textLength, 1, 100, 185, 35));
@@ -17,19 +21,20 @@ async function textToImageFun(text) {
       fontSize = 50;
       lineHeight = 50;
     }
-    let dataUri = await textToImage.generate(text, {
-      maxWidth: 700,
-      customHeight: 700,
+
+    //creating the image from the text
+    let dataUri = new UltimateTextToImage(text, {
+      width: 700,
+      height: 700,
+      fontFamily: "Ploni ML v2 AAA",
       fontSize: fontSize,
-      textAlign: "center",
-      verticalAlign: "center",
-      bgColor: "rgba(255, 255, 255, 0)",
-      textColor: "#FFFFFF",
-      lineHeight: lineHeight,
-      fontFamily: "Ploni ML v2 AAA"
-    });
-    let dataUriSliced = dataUri.slice(22);
-    return dataUriSliced;
+      strokeSize: 5,
+      strokeColor: "#000000",
+      fontColor: "#ffffff",
+      align: "center",
+      valign: "middle"
+    }).render().toBuffer().toString("base64");
+    return dataUri;
 } catch (err) {
   console.log(err);
 }

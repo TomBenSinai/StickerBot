@@ -7,6 +7,7 @@ const chatHandler = require('./chatHandler.js');
 //initializing client and authenticating
 const client = clientAuth();
 
+//handling new chat and group messages
 client.on('message', async message => {
   try{
     const chat = await message.getChat();
