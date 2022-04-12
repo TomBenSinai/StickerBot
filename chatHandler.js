@@ -1,5 +1,5 @@
 const textToImage = require('./textToImage');
-const { MessageMedia } = require('whatsapp-web.js');
+const { MessageMedia } = require('whatsapp-web.js')
 
 
 async function chatHandeler(client, message, chat) {
