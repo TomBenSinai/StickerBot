@@ -1,0 +1,4 @@
+*.png
+.wwebjs_auth/
+test.js
+node_modules/
