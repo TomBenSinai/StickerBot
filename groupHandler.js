@@ -10,7 +10,7 @@ async function groupHandeler(client, message, chat) {
   for (let i = 0; i < mentions.length; i++) {
     if (mentions[i].number = "972557256950") {
       //if Sticker Bot got mentioned, get the quoted message.
-      const quoted = await message.getQuotedMessage();
+      let quoted = await message.getQuotedMessage();
       //if the message message is of type image/video - turn it into a sticker
       if (message.type == "image" || message.type == "video") {
         //download the media
@@ -21,6 +21,9 @@ async function groupHandeler(client, message, chat) {
           stickerAuthor: "+972-557256950",
           stickerName: "Sticker Bot ^_^"
         });
+        break;
+        //if text is only the mention, do nothing.
+      } else if (quoted == null) {
         break;
         //if quoted is of type image/video - turn it into a sticker
       } else if (quoted.type == "image" || quoted.type == "video"){
