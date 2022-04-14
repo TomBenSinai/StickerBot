@@ -14,25 +14,20 @@ async function textToImageFun(text) {
     const textLength = text.length;
 
     //defining font size and line height depending on text lenth
-    if (textLength <= 100) {
        fontSize = Math.floor(scale(textLength, 1, 100, 185, 85));
-       lineHeight = Math.floor(scale(textLength, 1, 100, 185, 35));
-    } else {
-      fontSize = 50;
-      lineHeight = 50;
-    }
+
 
     //creating the image from the text
     let dataUri = new UltimateTextToImage(text, {
       width: 700,
-      height: 700,
-      fontFamily: "Ploni ML v2 AAA",
+      fontFamily: "Ploni ML v2 AAA, Arial, MS UI Gothic",
       fontSize: fontSize,
       strokeSize: 5,
       strokeColor: "#000000",
       fontColor: "#ffffff",
       align: "center",
-      valign: "middle"
+      valign: "middle",
+      margin: 5
     }).render().toBuffer().toString("base64");
     return dataUri;
 } catch (err) {

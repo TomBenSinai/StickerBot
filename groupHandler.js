@@ -1,4 +1,6 @@
 const textToImage = require('./textToImage');
+const mentionEveryone = require('./mentionEveryone.js');
+const checkIfAdmin = require('./checkIfAdmin.js');
 const { MessageMedia } = require('whatsapp-web.js');
 
 
@@ -8,11 +10,20 @@ async function groupHandeler(client, message, chat) {
   const mentions = await message.getMentions();
   //iterate and find if one of the mentions is Sticker Bot.
   for (let i = 0; i < mentions.length; i++) {
-    if (mentions[i].number = "972557256950") {
+    if (mentions[i].id.user == "972557256950") {
       //if Sticker Bot got mentioned, get the quoted message.
       let quoted = await message.getQuotedMessage();
       //if the message message is of type image/video - turn it into a sticker
-      if (message.type == "image" || message.type == "video") {
+      if (message.hasQuotedMsg == false) {
+        if (await checkIfAdmin(client, chat, message)) {
+          const messageContent = message.body.split("@972557256950 ")[1];
+          if (messageContent.toLowerCase() == "everyone") {
+            mentionEveryone(client, chat, message);
+          }
+        }
+        break;
+        //if text is only the mention, check if an admin wants to tag all members of the group.
+      } else if (message.type == "image" || message.type == "video") {
         //download the media
         const media = await message.downloadMedia();
         //send it as a sticker
@@ -21,9 +32,6 @@ async function groupHandeler(client, message, chat) {
           stickerAuthor: "+972-557256950",
           stickerName: "Sticker Bot ^_^"
         });
-        break;
-        //if text is only the mention, do nothing.
-      } else if (quoted == null) {
         break;
         //if quoted is of type image/video - turn it into a sticker
       } else if (quoted.type == "image" || quoted.type == "video"){

@@ -1,4 +1,4 @@
-const textToImage = require('./textToImage');
+const textToImage = require('./textToImage.js');
 const { MessageMedia } = require('whatsapp-web.js')
 
 
