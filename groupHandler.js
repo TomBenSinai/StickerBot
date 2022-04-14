@@ -14,16 +14,7 @@ async function groupHandeler(client, message, chat) {
       //if Sticker Bot got mentioned, get the quoted message.
       let quoted = await message.getQuotedMessage();
       //if the message message is of type image/video - turn it into a sticker
-      if (message.hasQuotedMsg == false) {
-        if (await checkIfAdmin(client, chat, message)) {
-          const messageContent = message.body.split("@972557256950 ")[1];
-          if (messageContent.toLowerCase() == "everyone") {
-            mentionEveryone(client, chat, message);
-          }
-        }
-        break;
-        //if text is only the mention, check if an admin wants to tag all members of the group.
-      } else if (message.type == "image" || message.type == "video") {
+      if (message.type == "image" || message.type == "video") {
         //download the media
         const media = await message.downloadMedia();
         //send it as a sticker
@@ -34,6 +25,17 @@ async function groupHandeler(client, message, chat) {
         });
         break;
         //if quoted is of type image/video - turn it into a sticker
+      } else if (message.hasQuotedMsg == false) {
+        if (await checkIfAdmin(client, chat, message)) {
+          const messageContent = message.body.split("@972557256950 ")[1];
+          if (messageContent == undefined || messageContent == " ") {
+
+          } else if (messageContent.toLowerCase() == "everyone") {
+            mentionEveryone(client, chat, message);
+          }
+        }
+        break;
+        //if text is only the mention, check if an admin wants to tag all members of the group.
       } else if (quoted.type == "image" || quoted.type == "video"){
         //download the media
         const media = await quoted.downloadMedia();
@@ -57,6 +59,11 @@ async function groupHandeler(client, message, chat) {
           stickerAuthor: "+972-557256950",
           stickerName: "Sticker Bot ^_^"
         });
+        break;
+      } else if (quoted.type == "sticker") {
+        const media = await quoted.downloadMedia();
+        console.log(media.mimetype);
+        quoted.reply(media);
         break;
       }
 
