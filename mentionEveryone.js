@@ -1,3 +1,4 @@
+var clc = require("cli-color");
 
 
 async function mentionEveryone(client, chat, message) {
@@ -14,7 +15,7 @@ async function mentionEveryone(client, chat, message) {
         }
          await chat.sendMessage(text, { mentions });
        } catch (err) {
-         console.log(err);
+         console.log(clc.red(err));
        }
 }
 

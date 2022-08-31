@@ -1,5 +1,7 @@
 const textToImage = require('text-to-image');
 const {UltimateTextToImage} = require("ultimate-text-to-image");
+var clc = require("cli-color");
+
 
 
 //function for mapping
@@ -20,18 +22,19 @@ async function textToImageFun(text) {
     //creating the image from the text
     let dataUri = new UltimateTextToImage(text, {
       width: 700,
-      fontFamily: "Ploni ML v2 AAA, Arial, MS UI Gothic",
+      fontFamily: "Ploni ML v2 AAA, Noto Emoji, Arial, MS UI Gothic",
       fontSize: fontSize,
       strokeSize: 5,
       strokeColor: "#000000",
       fontColor: "#ffffff",
       align: "center",
       valign: "middle",
-      margin: 5
+      margin: 5,
+      chopOverflow: false
     }).render().toBuffer().toString("base64");
     return dataUri;
 } catch (err) {
-  console.log(err);
+  return "TextTooLong"
 }
 };
 

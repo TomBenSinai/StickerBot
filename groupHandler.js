@@ -2,6 +2,8 @@ const textToImage = require('./textToImage');
 const mentionEveryone = require('./mentionEveryone.js');
 const checkIfAdmin = require('./checkIfAdmin.js');
 const { MessageMedia } = require('whatsapp-web.js');
+var clc = require("cli-color");
+
 
 
 async function groupHandeler(client, message, chat) {
@@ -29,13 +31,14 @@ async function groupHandeler(client, message, chat) {
         if (await checkIfAdmin(client, chat, message)) {
           const messageContent = message.body.split("@972557256950 ")[1];
           if (messageContent == undefined || messageContent == " ") {
-
+            //if text is only the mention, check if an admin wants to tag all members of the group.
           } else if (messageContent.toLowerCase() == "everyone") {
             mentionEveryone(client, chat, message);
+          } else if (messageContent.toLowerCase() == "69") {
+            message.reply("Nice.")
           }
         }
         break;
-        //if text is only the mention, check if an admin wants to tag all members of the group.
       } else if (quoted.type == "image" || quoted.type == "video"){
         //download the media
         const media = await quoted.downloadMedia();
@@ -51,18 +54,21 @@ async function groupHandeler(client, message, chat) {
         const text = quoted.body;
         //turn text into an image
         const stickerData = await textToImage(text);
-        //create new MessageMedia with the image
-        const imageSticker = await new MessageMedia("image/png", stickerData);
-        //send it as a sticker
-        await chat.sendMessage(imageSticker, {
-          sendMediaAsSticker: true,
-          stickerAuthor: "+972-557256950",
-          stickerName: "Sticker Bot ^_^"
-        });
-        break;
+        if (stickerData == "TextTooLong") {
+          chat.sendMessage("*Text is too long. The maximum length supported is 170 characters.*")
+        } else {
+          //create new MessageMedia with the image
+          const imageSticker = await new MessageMedia("image/png", stickerData);
+          //send it as a sticker
+          await chat.sendMessage(imageSticker, {
+            sendMediaAsSticker: true,
+            stickerAuthor: "+972-557256950",
+            stickerName: "Sticker Bot ^_^"
+          });
+          break;
+        }
       } else if (quoted.type == "sticker") {
-        const media = await quoted.downloadMedia();
-        console.log(media.mimetype);
+        let media = await quoted.downloadMedia();
         quoted.reply(media);
         break;
       }
@@ -71,7 +77,7 @@ async function groupHandeler(client, message, chat) {
 
     }
   } catch (err) {
-    console.log(err);
+    console.log(clc.red(err));
   }
   }
 
