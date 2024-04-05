@@ -8,28 +8,22 @@ var clc = require("cli-color");
 
 async function groupHandeler(client, message, chat) {
   try{
-    //gets the mentions in a message, if any.
-  const mentions = await message.getMentions();
-  //iterate and find if one of the mentions is Sticker Bot.
-  for (let i = 0; i < mentions.length; i++) {
-    if (mentions[i].id.user == "972557256950") {
-      //if Sticker Bot got mentioned, get the quoted message.
+  const mentions = await getMentionsArray(message);
+  for (const mention of mentions) {
+    if (mention === client.info.me._serialized) {
       let quoted = await message.getQuotedMessage();
-      //if the message message is of type image/video - turn it into a sticker
       if (message.type == "image" || message.type == "video") {
-        //download the media
         const media = await message.downloadMedia();
-        //send it as a sticker
         message.reply(media, undefined, {
           sendMediaAsSticker: true,
-          stickerAuthor: "+972-557256950",
+          stickerAuthor: "",
           stickerName: "Sticker Bot ^_^"
         });
         break;
         //if quoted is of type image/video - turn it into a sticker
       } else if (message.hasQuotedMsg == false) {
         if (await checkIfAdmin(client, chat, message)) {
-          const messageContent = message.body.split("@972557256950 ")[1];
+          const messageContent = message.body.split("@972557201917 ")[1];
           if (messageContent == undefined || messageContent == " ") {
             //if text is only the mention, check if an admin wants to tag all members of the group.
           } else if (messageContent.toLowerCase() == "everyone") {
@@ -45,7 +39,7 @@ async function groupHandeler(client, message, chat) {
         //send it as a sticker
         quoted.reply(media, undefined, {
           sendMediaAsSticker: true,
-          stickerAuthor: "+972-557256950",
+          stickerAuthor: "",
           stickerName: "Sticker Bot ^_^"
         });
         break;
@@ -55,14 +49,13 @@ async function groupHandeler(client, message, chat) {
         //turn text into an image
         const stickerData = await textToImage(text);
         if (stickerData == "TextTooLong") {
-          chat.sendMessage("*Text is too long. The maximum length supported is 170 characters.*")
+          await message.reply("*Text is too long. The maximum length supported is 170 characters.*")
         } else {
-          //create new MessageMedia with the image
           const imageSticker = await new MessageMedia("image/png", stickerData);
-          //send it as a sticker
+
           await chat.sendMessage(imageSticker, {
             sendMediaAsSticker: true,
-            stickerAuthor: "+972-557256950",
+            stickerAuthor: "",
             stickerName: "Sticker Bot ^_^"
           });
           break;
@@ -81,6 +74,11 @@ async function groupHandeler(client, message, chat) {
   }
   }
 
-
+async function getMentionsArray(message) {
+  if (typeof(message.mentionedIds[0]) === "object") {
+    return await message.mentionedIds.map(mantion => mantion._serialized)
+  }
+  return await message.mentionedIds
+}
 
 module.exports = groupHandeler;
