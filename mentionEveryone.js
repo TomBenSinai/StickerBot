@@ -12,7 +12,7 @@ async function mentionEveryone(client, chat, message) {
         }
         mentions.push(message.author)
         const num = client.getContactById(message.author).number
-        const text = `_*@An admin has tagged you all*_`;
+        const text = `_*An admin has tagged you all*_`;
 
          await chat.sendMessage(text, { mentions });
        } catch (err) {

@@ -9,11 +9,17 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "axios": "^1.6.8",
     "cli-color": "^2.0.2",
+    "commander": "^12.0.0",
+    "emoji-datasource": "^15.1.2",
     "ffmpeg": "^0.0.4",
+    "from": "^0.1.7",
     "fs": "^0.0.1-security",
     "image-stroke": "^0.1.1",
+    "import": "^0.0.6",
     "qrcode-terminal": "^0.12.0",
+    "sharp": "^0.33.3",
     "text-to-image": "^5.2.0",
     "ultimate-text-to-image": "^1.0.0",
     "whatsapp-web.js": "github:allburov/whatsapp-web.js#webpack-exodus"

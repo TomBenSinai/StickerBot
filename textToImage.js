@@ -1,24 +1,14 @@
 const textToImage = require('text-to-image');
-const {UltimateTextToImage} = require("ultimate-text-to-image");
+const {UltimateTextToImage, registerFont} = require("ultimate-text-to-image");
 var clc = require("cli-color");
 
 
-
-//function for mapping
-function scale (number, inMin, inMax, outMin, outMax) {
-    return (number - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
-}
+registerFont("./assets/fonts/font.ttf")
 
 async function textToImageFun(text) {
   try{
-    let fontSize;
-    let lineHeight;
-    const textLength = text.length;
-
-    //defining font size and line height depending on text lenth
-       fontSize = Math.floor(scale(textLength, 1, 100, 300, 120));
-
-    if (textLength > 170) {
+    
+    if (text.length > 170) {
       return "TextTooLong"
     }
 
@@ -26,7 +16,7 @@ async function textToImageFun(text) {
     let dataUri = new UltimateTextToImage(text, {
       maxWidth: 1000,
       maxHeight: 1000,
-      fontFamily: "Afek 1.5 AAA, Arial, MS UI Gothic",
+      fontFamily: "Afek 1.5 AAA, arial",
       fontSize: 300,
       minFontSize: 120,
       strokeSize: 6,

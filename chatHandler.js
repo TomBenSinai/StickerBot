@@ -25,7 +25,7 @@ async function chatHandeler(client, message, chat) {
         const imageSticker = await new MessageMedia("image/png", stickerData);
         await chat.sendMessage(imageSticker, {
           sendMediaAsSticker: true,
-          stickerAuthor: "+972-557256950",
+          stickerAuthor: "",
           stickerName: "Sticker Bot ^_^"
         });
       }
