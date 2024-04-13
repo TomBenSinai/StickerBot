@@ -1,4 +1,6 @@
 *.png
-.wwebjs_auth/
+.wwebjs*
 test.js
 node_modules/
+test*
+.idea

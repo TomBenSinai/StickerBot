@@ -1,8 +1,8 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
-const clientAuth = require('./auth.js');
+const clientAuth = require('./startUp.js');
 const groupHandler = require('./groupHandler.js');
 const chatHandler = require('./chatHandler.js');
-const test = require('./test.js');
+// const test = require('./test.js');
 var clc = require("cli-color");
 
 
@@ -17,7 +17,7 @@ client.on('message', async message => {
     const chat = await message.getChat();
 
     //test
-    test(client, chat, message);
+    // test(client, chat, message);
     //test
 
     //check if message came from a privet chat or from a group
