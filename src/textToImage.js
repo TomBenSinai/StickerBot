@@ -7,10 +7,6 @@ registerFont("./assets/fonts/font.ttf")
 
 async function textToImageFun(text) {
   try{
-    
-    if (text.length > 170) {
-      return "TextTooLong"
-    }
 
     //creating the image from the text
     let dataUri = new UltimateTextToImage(text, {
@@ -28,7 +24,7 @@ async function textToImageFun(text) {
     }).render().toBuffer().toString("base64");
     return dataUri;
 } catch (err) {
-  return "TextTooLong"
+  throw new Error("Somthing went wrong while creating the image")
 }
 };
 
