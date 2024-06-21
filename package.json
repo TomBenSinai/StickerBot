@@ -4,6 +4,7 @@
   "description": "",
   "main": "bot.js",
   "scripts": {
+    "start": "node ./src/bot.js",
     "test": "node test_text_to_image.js"
   },
   "author": "",
