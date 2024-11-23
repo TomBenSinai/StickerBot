@@ -2,38 +2,33 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const clientAuth = require('./startUp.js');
 const groupHandler = require('./groupHandler.js');
 const chatHandler = require('./chatHandler.js');
-// const test = require('./test.js');
+const utils = require('./utils.js');
 var clc = require("cli-color");
 
 
 
-//initializing client and authenticating
 const client = clientAuth();
 
-//handling new chat and group messages
 client.on('message', async message => {
   try{
-    //Get the chat in question
     const chat = await message.getChat();
-
-    //test
-    // test(client, chat, message);
-    //test
-
-    //check if message came from a privet chat or from a group
+    chat.isGroup = chat.id && chat.id.server == "g.us";
+    
     if (chat.isGroup) {
       groupHandler(client, message, chat);
-    } else {
+    } else if (chat.isGroup === false){
       chatHandler(client, message, chat)
     }
   } catch (err) {
+    if (err instanceof utils.StringTooLongForSticker) {
+      message.reply(err.message)
+    }
     console.log(clc.red(err));
   }
 });
 
 process.on('uncaughtException', function (err) {
   console.log('Caught exception: ' + err);
-  // client.initialize();
 
 });
 
