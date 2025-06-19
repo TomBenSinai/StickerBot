@@ -16,7 +16,11 @@ export class BotFactory {
     const config: BotConfig = {
       headless: false,
       maxTextLength: 200,
-      fontPath: path.join(process.cwd(), "assets", "fonts", "font.ttf")
+      fontPath: path.join(process.cwd(), "assets", "fonts", "font.ttf"),
+      stickerOptions: {
+        stickerAuthor: "Dev Bot",
+        stickerName: "Dev Sticker Bot 🚧"
+      }
     };
     return new StickerBot(config);
   }

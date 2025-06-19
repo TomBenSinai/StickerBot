@@ -22,6 +22,10 @@ async function customExample() {
     headless: true,
     maxTextLength: 250,
     fontPath: './assets/fonts/font.ttf',
+    stickerOptions: {
+      stickerAuthor: "My Custom Bot",
+      stickerName: "Custom Stickers ✨"
+    },
     puppeteerArgs: [
       '--no-sandbox',
       '--disable-setuid-sandbox',

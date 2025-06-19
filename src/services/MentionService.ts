@@ -1,9 +1,9 @@
-import { Client, GroupChat, Message } from "whatsapp-web.js";
+import { GroupChat } from "whatsapp-web.js";
 import { IMentionService } from "../types/BotConfig";
 
 export class MentionService implements IMentionService {
 
-  async mentionEveryone(client: Client, chat: GroupChat, message: Message): Promise<void> {
+  async mentionEveryone(chat: GroupChat): Promise<void> {
     try {
       const mentions: string[] = [];
       for (let participant of chat.participants) {

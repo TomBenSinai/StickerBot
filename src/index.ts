@@ -2,6 +2,10 @@
 export { StickerBot } from './StickerBot';
 export { BotFactory } from './BotFactory';
 
+// Configuration
+export { DEFAULT_CONFIG, mergeWithDefaults } from './config/DefaultConfig';
+export type { ResolvedBotConfig } from './config/DefaultConfig';
+
 // Services
 export { TextToImageService } from './services/TextToImageService';
 export { AdminService } from './services/AdminService';

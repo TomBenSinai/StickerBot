@@ -3,6 +3,12 @@ export interface BotConfig {
   fontPath?: string;
   maxTextLength?: number;
   puppeteerArgs?: string[];
+  stickerOptions?: StickerOptions;
+}
+
+export interface StickerOptions {
+  stickerAuthor?: string;
+  stickerName?: string;
 }
 
 export interface IBotService {
@@ -16,9 +22,9 @@ export interface ITextToImageService {
 }
 
 export interface IAdminService {
-  isAdmin(client: any, chat: any, message: any): Promise<boolean>;
+  isAdmin(chat: any, message: any): Promise<boolean>;
 }
 
 export interface IMentionService {
-  mentionEveryone(client: any, chat: any, message: any): Promise<void>;
+  mentionEveryone(chat: any): Promise<void>;
 } 

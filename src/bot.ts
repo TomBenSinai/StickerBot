@@ -5,12 +5,10 @@ async function main() {
   try {
     console.log(clc.blue('Initializing StickerBot...'));
     
-    // Create bot instance based on environment
     const bot = process.env.NODE_ENV === 'production' 
       ? BotFactory.createProduction()
       : BotFactory.createDefault();
 
-    // Start the bot
     await bot.start();
     
   } catch (error) {
@@ -19,5 +17,4 @@ async function main() {
   }
 }
 
-// Run the bot
 main();

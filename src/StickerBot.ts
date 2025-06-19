@@ -1,11 +1,13 @@
 import { Client, LocalAuth, Message, Chat, GroupChat, MessageMedia } from 'whatsapp-web.js';
 import qrcode from 'qrcode-terminal';
 import clc from 'cli-color';
-import { BotConfig, IBotService } from './types/BotConfig';
+
+import { BotConfig, IBotService, StickerOptions } from './types/BotConfig';
+import { mergeWithDefaults, ResolvedBotConfig } from './config/DefaultConfig';
 import { TextToImageService } from './services/TextToImageService';
 import { AdminService } from './services/AdminService';
 import { MentionService } from './services/MentionService';
-import { StringTooLongForSticker, MAX_TEXT_LENGTH } from './utils';
+import { StringTooLongForSticker } from './utils';
 
 export class StickerBot implements IBotService {
   private client: Client;
@@ -13,9 +15,14 @@ export class StickerBot implements IBotService {
   private adminService: AdminService;
   private mentionService: MentionService;
   private isRunning: boolean = false;
+  private readonly finalConfig: ResolvedBotConfig;
+  private isRetrievingUnreadMessages: boolean = true;
+  private messageQueue: Message[] = [];
+  private isProcessingQueue: boolean = false;
 
-  constructor(private config: BotConfig = {}) {
-    this.textService = new TextToImageService(config.fontPath);
+  constructor(userConfig: BotConfig = {}) {
+    this.finalConfig = mergeWithDefaults(userConfig);
+    this.textService = new TextToImageService(this.finalConfig.fontPath);
     this.adminService = new AdminService();
     this.mentionService = new MentionService();
     this.client = this.initializeClient();
@@ -23,22 +30,11 @@ export class StickerBot implements IBotService {
   }
 
   private initializeClient(): Client {
-    const defaultArgs = [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-accelerated-2d-canvas',
-      '--no-first-run',
-      '--no-zygote',
-      '--single-process',
-      '--disable-gpu'
-    ];
-
     return new Client({
       authStrategy: new LocalAuth(),
       puppeteer: {
-        headless: this.config.headless ?? true,
-        args: this.config.puppeteerArgs || defaultArgs
+        headless: this.finalConfig.headless,
+        args: this.finalConfig.puppeteerArgs
       }
     });
   }
@@ -59,9 +55,13 @@ export class StickerBot implements IBotService {
     qrcode.generate(qr, { small: true });
   }
 
-  private handleReady(): void {
+  private async handleReady(): Promise<void> {
     console.log(clc.green("Client is up and running!"));
-    this.retrieveUnreadMessages();
+    await this.retrieveUnreadMessages();
+    this.isRetrievingUnreadMessages = false;
+    
+    // Process any messages that arrived while we were processing unread messages
+    await this.processQueuedMessages();
   }
 
   private handleAuthFailure(msg: string): void {
@@ -72,10 +72,27 @@ export class StickerBot implements IBotService {
     console.error(clc.red('Critical error:'), err);
   }
 
+  private getStickerOptions(): { sendMediaAsSticker: true; stickerAuthor: string; stickerName: string } {
+    return {
+      sendMediaAsSticker: true,
+      stickerAuthor: this.finalConfig.stickerOptions.stickerAuthor,
+      stickerName: this.finalConfig.stickerOptions.stickerName
+    };
+  }
+
   async handleMessage(message: Message): Promise<void> {
+    // If still retrieving unread messages, queue new live messages
+    if (this.isRetrievingUnreadMessages) {
+      this.messageQueue.push(message);
+      return;
+    }
+
+    await this.processIncomingMessage(message);
+  }
+
+  private async processIncomingMessage(message: Message): Promise<void> {
     try {
       const chat = await message.getChat();
-      
       if (chat.isGroup) {
         await this.handleGroupMessage(message, chat as GroupChat);
       } else {
@@ -106,14 +123,10 @@ export class StickerBot implements IBotService {
     try {
       if (message.type === "image" || message.type === "video") {
         const media = await message.downloadMedia();
-        await chat.sendMessage(media, {
-          sendMediaAsSticker: true,
-          stickerAuthor: "",
-          stickerName: "Sticker Bot ^_^"
-        });
+        await chat.sendMessage(media, this.getStickerOptions());
       } else if (message.type === "chat") {
         const text = message.body;
-        const maxLength = this.config.maxTextLength || MAX_TEXT_LENGTH;
+        const maxLength = this.finalConfig.maxTextLength;
         
         if (text.length > maxLength) {
           throw new StringTooLongForSticker(text.length);
@@ -121,11 +134,7 @@ export class StickerBot implements IBotService {
         
         const stickerData = await this.textService.generateImage(text);
         const imageSticker = new MessageMedia("image/png", stickerData, "sticker.png");
-        await chat.sendMessage(imageSticker, {
-          sendMediaAsSticker: true,
-          stickerAuthor: "",
-          stickerName: "Sticker Bot ^_^"
-        });
+        await chat.sendMessage(imageSticker, this.getStickerOptions());
       } else if (message.type === "sticker") {
         const media = await message.downloadMedia();
         await message.reply(media);
@@ -153,10 +162,7 @@ export class StickerBot implements IBotService {
   }
 
   private async processMessage(message: Message): Promise<[MessageMedia, object] | [undefined, undefined]> {
-    const stickerOptions = {
-      sendMediaAsSticker: true,
-      stickerName: "Sticker Bot ^_^"
-    };
+    const stickerOptions = this.getStickerOptions();
 
     try {
       if (message.type === "image" || message.type === "video") {
@@ -166,12 +172,12 @@ export class StickerBot implements IBotService {
       
       if (message.type === "chat") {
         const text = message.body;
-        const maxLength = this.config.maxTextLength || MAX_TEXT_LENGTH;
+        const maxLength = this.finalConfig.maxTextLength;
         
         if (text.length > maxLength) {
           throw new StringTooLongForSticker(text.length);
         }
-        
+
         const stickerData = await this.textService.generateImage(text);
         const media = new MessageMedia("image/png", stickerData, "sticker.png");
         return [media, stickerOptions];
@@ -196,12 +202,35 @@ export class StickerBot implements IBotService {
           chat.sendSeen();
           const unreadMessages = await chat.fetchMessages({ limit: chat.unreadCount });
           for (const message of unreadMessages) {
-            await this.handleMessage(message);
+            await this.processIncomingMessage(message);
           }
         }
       }
     } catch (err) {
       console.error('Error retrieving unread messages:', err);
+    }
+  }
+
+  private async processQueuedMessages(): Promise<void> {
+    if (this.isProcessingQueue || this.messageQueue.length === 0) {
+      return;
+    }
+
+    this.isProcessingQueue = true;
+    console.log(clc.yellow(`Processing ${this.messageQueue.length} queued messages...`));
+
+    try {
+      while (this.messageQueue.length > 0) {
+        const message = this.messageQueue.shift();
+        if (message) {
+          await this.processIncomingMessage(message);
+        }
+      }
+    } catch (err) {
+      console.error(clc.red('Error processing queued messages:'), err);
+    } finally {
+      this.isProcessingQueue = false;
+      console.log(clc.green('Finished processing queued messages'));
     }
   }
 
