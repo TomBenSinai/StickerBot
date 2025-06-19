@@ -2,17 +2,19 @@
   "name": "stickerbot",
   "version": "1.0.0",
   "description": "",
-  "main": "bot.js",
+  "main": "dist/bot.js",
   "scripts": {
-    "start": "node ./src/bot.js",
+    "build": "tsc",
+    "start": "node dist/bot.js",
+    "dev": "npm run build && npm start",
     "test": "node test_text_to_image.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "axios": "^1.6.8",
-    "chrome-paths": "^1.0.1",
-    "cli-color": "^2.0.2",
+    "canvas": "^3.1.0",
+    "cli-color": "^2.0.4",
     "commander": "^12.0.0",
     "emoji-datasource": "^15.1.2",
     "ffmpeg": "^0.0.4",
@@ -22,8 +24,16 @@
     "import": "^0.0.6",
     "qrcode-terminal": "^0.12.0",
     "sharp": "^0.33.3",
-    "text-to-image": "^5.2.0",
-    "ultimate-text-to-image": "^1.0.0",
-    "whatsapp-web.js": "github:allburov/whatsapp-web.js#webpack-exodus"
+    "whatsapp-web.js": "^1.30.0"
+  },
+  "devDependencies": {
+    "@types/axios": "^0.9.36",
+    "@types/cli-color": "^2.0.6",
+    "@types/commander": "^2.12.0",
+    "@types/from": "^0.1.32",
+    "@types/node": "^24.0.3",
+    "@types/qrcode-terminal": "^0.12.2",
+    "@types/sharp": "^0.31.1",
+    "typescript": "^5.8.3"
   }
 }
