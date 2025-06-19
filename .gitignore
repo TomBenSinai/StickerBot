@@ -1,7 +1,10 @@
-*.png
 .wwebjs*
 test.js
 node_modules/
 test*
 .idea
 .vs/*
+.cursor/*
+
+# Compiled TypeScript output
+dist/
