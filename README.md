@@ -6,20 +6,15 @@ A WhatsApp bot that turns your text and media into stickers instantly!
 > **Unofficial WhatsApp Bot - Use at Your Own Risk**
 > 
 > This is an unofficial WhatsApp bot that uses WhatsApp Web automation. Using this bot may violate WhatsApp's Terms of Service and could potentially result in your WhatsApp account being temporarily or permanently banned.
-> 
-> - This bot is **NOT** officially endorsed by WhatsApp
-> - Use at your own risk
-> - Consider using a secondary WhatsApp account for testing
-> - We are not responsible for any account restrictions or bans
-> 
-> **By using this bot, you acknowledge and accept these risks.**
+> Consider using a secondary WhatsApp account for testing
+>
+> **By using this bot, you acknowledge and accept these risks.** We are not responsible for any account restrictions or bans
 
-## What it does
+## Supporter features
 
-- 📝 **Text to Stickers**: Send any text and get a custom sticker back
-- 🖼️ **Media to Stickers**: Convert your images and videos into stickers
-- 👥 **Works Everywhere**: Private chats and group chats
-- 🎨 **Custom Fonts**: Beautiful text rendering with custom typography
+- Text to Stickers
+- Media to Stickers
+- Groups and private chats
 
 ## Quick Start
 
@@ -28,17 +23,24 @@ A WhatsApp bot that turns your text and media into stickers instantly!
    npm install
    ```
 
-2. **Start the bot**
+1. **Start the bot**
    ```bash
    npm run dev
    ```
 
-3. **Scan the QR code** with your phone's WhatsApp
+1. **Scan the QR code** with your phone's WhatsApp
+   - Open WhatsApp on your phone
+   - Go to Settings → Linked Devices → Link a Device
 
-4. **Start creating stickers!**
+1. **Start creating stickers!**
    - Send text → Get text sticker
    - Send image/video → Get media sticker
    - In groups: Mention the bot with your content
+
+## Requirements
+
+- Node.js 18 or higher
+- A phone with WhatsApp
 
 ## Usage Examples
 
@@ -51,32 +53,9 @@ A WhatsApp bot that turns your text and media into stickers instantly!
 - Send: `@StickerBot Hello everyone!` → Get a text sticker
 - Reply to any message and mention the bot → Convert that message to sticker
 
-## Commands
-
-```bash
-npm run dev      # Start in development mode
-npm start        # Start in production mode
-npm run build    # Build the project
-```
-
-## Requirements
-
-- Node.js 18 or higher
-- A phone with WhatsApp
-
-## First Time Setup
-
-1. Run the bot with `npm run dev`
-2. A QR code will appear in your terminal
-3. Open WhatsApp on your phone
-4. Go to Settings → Linked Devices → Link a Device
-5. Scan the QR code with your phone
-6. The bot is now connected to your WhatsApp!
-
 ## Troubleshooting
 
 **Bot won't start?**
-- Make sure you have Node.js installed
 - Try deleting the `.wwebjs_auth` folder and scanning the QR code again
 
 **Need to reconnect?**
