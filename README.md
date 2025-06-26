@@ -61,7 +61,7 @@ npm run build    # Build the project
 
 ## Requirements
 
-- Node.js 16 or higher
+- Node.js 18 or higher
 - A phone with WhatsApp
 
 ## First Time Setup
@@ -78,10 +78,6 @@ npm run build    # Build the project
 **Bot won't start?**
 - Make sure you have Node.js installed
 - Try deleting the `.wwebjs_auth` folder and scanning the QR code again
-
-**Stickers not working?**
-- Check that your text isn't too long (keep it under 150 characters)
-- Make sure the bot has permission to send messages
 
 **Need to reconnect?**
 - Delete the `.wwebjs_auth` folder

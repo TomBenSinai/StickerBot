@@ -1,4 +1,4 @@
-import { Client, LocalAuth, Message, Chat, GroupChat, MessageMedia } from 'whatsapp-web.js';
+import { Client, LocalAuth, Message, Chat, GroupChat, MessageMedia, MessageSendOptions } from 'whatsapp-web.js';
 import qrcode from 'qrcode-terminal';
 import clc from 'cli-color';
 
@@ -12,8 +12,8 @@ import { StringTooLongForSticker } from './utils';
 export class StickerBot implements IBotService {
   private client: Client;
   private textService: TextToImageService;
-  private adminService: AdminService;
-  private mentionService: MentionService;
+  // private adminService: AdminService; TODO: Implement use of admin service
+  // private mentionService: MentionService; TODO: Implement use of mention service
   private isRunning: boolean = false;
   private readonly finalConfig: ResolvedBotConfig;
   private isRetrievingUnreadMessages: boolean = true;
@@ -23,8 +23,8 @@ export class StickerBot implements IBotService {
   constructor(userConfig: BotConfig = {}) {
     this.finalConfig = mergeWithDefaults(userConfig);
     this.textService = new TextToImageService(this.finalConfig.fontPath);
-    this.adminService = new AdminService();
-    this.mentionService = new MentionService();
+    // this.adminService = new AdminService(); // TODO: Implement use of admin service
+    // this.mentionService = new MentionService(); // TODO: Implement use of mention service
     this.client = this.initializeClient();
     this.setupEventHandlers();
   }
@@ -72,16 +72,15 @@ export class StickerBot implements IBotService {
     console.error(clc.red('Critical error:'), err);
   }
 
-  private getStickerOptions(): { sendMediaAsSticker: true; stickerAuthor: string; stickerName: string } {
+  private getStickerOptions(): MessageSendOptions {
     return {
       sendMediaAsSticker: true,
       stickerAuthor: this.finalConfig.stickerOptions.stickerAuthor,
-      stickerName: this.finalConfig.stickerOptions.stickerName
+      stickerName: this.finalConfig.stickerOptions.stickerName,
     };
   }
 
   async handleMessage(message: Message): Promise<void> {
-    // If still retrieving unread messages, queue new live messages
     if (this.isRetrievingUnreadMessages) {
       this.messageQueue.push(message);
       return;
@@ -94,9 +93,9 @@ export class StickerBot implements IBotService {
     try {
       const chat = await message.getChat();
       if (chat.isGroup) {
-        await this.handleGroupMessage(message, chat as GroupChat);
+        await this.handleGroupMessage(message);
       } else {
-        await this.handlePrivateMessage(message, chat);
+        await this.handlePrivateMessage(message);
       }
     } catch (err) {
       if (err instanceof StringTooLongForSticker) {
@@ -107,42 +106,59 @@ export class StickerBot implements IBotService {
     }
   }
 
-  private async handleGroupMessage(message: Message, chat: GroupChat): Promise<void> {
-    const mentions = this.getMentionsArray(message);
-    const isMentioned = mentions.some(mention => mention === this.client.info.me._serialized);
+  private async handleGroupMessage(message: Message): Promise<void> {
+    const mentions = await this.getMentionsArray(message);    
+    const clientId = this.client.info?.wid?._serialized || this.client.info?.me?._serialized;
     
-    if (isMentioned) {
-      const [replyData, options] = await this.getProcessedData(message);
-      if (replyData) {
-        await message.reply(replyData, message.from, options);
+    if (clientId) {
+      const isMentioned = mentions.some(mention => mention === clientId);
+      
+      if (isMentioned) {
+        const [replyData, options] = await this.getProcessedData(message);
+        if (replyData) {
+          await message.reply(replyData, message.from, options);
+        }
       }
     }
   }
 
-  private async handlePrivateMessage(message: Message, chat: Chat): Promise<void> {
+  private async handlePrivateMessage(message: Message): Promise<void> {
     try {
       const [mediaData, options] = await this.processMessage(message);
       if (mediaData) {
-        // Handle sticker replies differently
-        if ('sendAsReply' in options) {
-          await message.reply(mediaData);
-        } else {
-          await chat.sendMessage(mediaData, options);
-        }
+        await message.reply(mediaData, undefined, options);
       }
     } catch (err) {
       throw err; // Re-throw to be handled by main error handler
     }
   }
 
-  private getMentionsArray(message: Message): string[] {
-    if (!message.mentionedIds) {
+  private async getMentionsArray(message: Message): Promise<string[]> {
+    try {
+      // Try the new way first (more reliable when it works)
+      const mentions = await message.getMentions();
+      if (mentions && mentions.length > 0) {
+        return mentions.map((contact) => contact.id._serialized);
+      }
+    } catch (err) {
+      console.warn(clc.yellow('Failed to get mentions via getMentions(), falling back to mentionedIds'));
+    }
+
+    // Fallback to the old way (direct access to mentionedIds)
+    if (!message.mentionedIds || message.mentionedIds.length === 0) {
       return [];
     }
-    return message.mentionedIds.map((id: any) => id._serialized || id);
+    
+    return message.mentionedIds.map((id: any) => {
+      // Handle different ID formats
+      if (typeof id === 'string') {
+        return id;
+      }
+      return id._serialized || id.toString();
+    });
   }
 
-  private async getProcessedData(message: Message): Promise<[MessageMedia, object] | [undefined, undefined]> {
+  private async getProcessedData(message: Message): Promise<[MessageMedia, MessageSendOptions] | [undefined, undefined]> {
     try {
       const messageToProcess = message.hasQuotedMsg ? await message.getQuotedMessage() : message;
       return this.processMessage(messageToProcess);
@@ -152,7 +168,7 @@ export class StickerBot implements IBotService {
     }
   }
 
-  private async processMessage(message: Message): Promise<[MessageMedia, object] | [undefined, undefined]> {
+  private async processMessage(message: Message): Promise<[MessageMedia, MessageSendOptions] | [undefined, undefined]> {
     const stickerOptions = this.getStickerOptions();
 
     try {
@@ -176,7 +192,7 @@ export class StickerBot implements IBotService {
       
       if (message.type === "sticker") {
         const media = await message.downloadMedia();
-        return [media, { sendAsReply: true }]; // Special flag for reply handling
+        return [media, {}]; // Special flag for reply handling
       }
       
       return [undefined, undefined];
