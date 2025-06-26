@@ -1,13 +1,12 @@
-import { Client, LocalAuth, Message, Chat, GroupChat, MessageMedia, MessageSendOptions } from 'whatsapp-web.js';
+import { Client, LocalAuth, Message, MessageMedia, MessageSendOptions } from 'whatsapp-web.js';
 import qrcode from 'qrcode-terminal';
 import clc from 'cli-color';
 
 import { BotConfig, IBotService, StickerOptions } from './types/BotConfig';
 import { mergeWithDefaults, ResolvedBotConfig } from './config/DefaultConfig';
 import { TextToImageService } from './services/TextToImageService';
-import { AdminService } from './services/AdminService';
-import { MentionService } from './services/MentionService';
 import { StringTooLongForSticker } from './utils';
+import { ProcessedMessage, isMediaMessage, isTextMessage, isStickerMessage } from './types/Message';
 
 export class StickerBot implements IBotService {
   private client: Client;
@@ -92,46 +91,43 @@ export class StickerBot implements IBotService {
   private async processIncomingMessage(message: Message): Promise<void> {
     try {
       const chat = await message.getChat();
-      if (chat.isGroup) {
-        await this.handleGroupMessage(message);
-      } else {
-        await this.handlePrivateMessage(message);
+      
+      const shouldProcess = await this.shouldProcessMessage(message, chat.isGroup);
+      
+      if (shouldProcess) {
+        await this.handleMessageReply(message, chat.isGroup);
       }
     } catch (err) {
-      if (err instanceof StringTooLongForSticker) {
-        await message.reply(err.message);
-      } else {
-        console.error(clc.red('Error handling message:'), err);
-      }
+      await this.handleMessageError(message, err);
     }
   }
 
-  private async handleGroupMessage(message: Message): Promise<void> {
+  private async handleMessageReply(message: Message, isGroup: boolean): Promise<void> {
+    const processedData = await this.getProcessedData(message, isGroup);
+    if (processedData) {
+      await message.reply(processedData.media, undefined, processedData.stickerOptions);
+    }
+  }
+
+  private async handleMessageError(message: Message, err: any): Promise<void> {
+    if (err instanceof StringTooLongForSticker) {
+      await message.reply(err.message);
+    } else {
+      console.error(clc.red('Error handling message:'), err);
+    }
+  }
+
+  private async shouldProcessMessage(message: Message, isGroup: boolean): Promise<boolean> {
+    if (!isGroup) return true;
+    
     const mentions = await this.getMentionsArray(message);    
     const clientId = this.client.info?.wid?._serialized || this.client.info?.me?._serialized;
     
-    if (clientId) {
-      const isMentioned = mentions.some(mention => mention === clientId);
-      
-      if (isMentioned) {
-        const [replyData, options] = await this.getProcessedData(message);
-        if (replyData) {
-          await message.reply(replyData, message.from, options);
-        }
-      }
-    }
+    if (!clientId) return false;
+    
+    return mentions.some(mention => mention === clientId);
   }
 
-  private async handlePrivateMessage(message: Message): Promise<void> {
-    try {
-      const [mediaData, options] = await this.processMessage(message);
-      if (mediaData) {
-        await message.reply(mediaData, undefined, options);
-      }
-    } catch (err) {
-      throw err; // Re-throw to be handled by main error handler
-    }
-  }
 
   private async getMentionsArray(message: Message): Promise<string[]> {
     try {
@@ -158,47 +154,59 @@ export class StickerBot implements IBotService {
     });
   }
 
-  private async getProcessedData(message: Message): Promise<[MessageMedia, MessageSendOptions] | [undefined, undefined]> {
+  private async getProcessedData(message: Message, isGroup: boolean): Promise<ProcessedMessage | undefined> {
     try {
-      const messageToProcess = message.hasQuotedMsg ? await message.getQuotedMessage() : message;
+      const messageToProcess = isGroup ? await message.getQuotedMessage() : message;
       return this.processMessage(messageToProcess);
     } catch (err) {
       console.error('Error processing message data:', err);
-      return [undefined, undefined];
+      return undefined;
     }
   }
 
-  private async processMessage(message: Message): Promise<[MessageMedia, MessageSendOptions] | [undefined, undefined]> {
+  private async processMessage(message: Message): Promise<ProcessedMessage | undefined> {
     const stickerOptions = this.getStickerOptions();
 
     try {
-      if (message.type === "image" || message.type === "video") {
-        const media = await message.downloadMedia();
-        return [media, stickerOptions];
+      if (isMediaMessage(message.type)) {
+        return await this.processMediaMessage(message, stickerOptions);
       }
       
-      if (message.type === "chat") {
-        const text = message.body;
-        const maxLength = this.finalConfig.maxTextLength;
-        
-        if (text.length > maxLength) {
-          throw new StringTooLongForSticker(text.length);
-        }
-
-        const stickerData = await this.textService.generateImage(text);
-        const media = new MessageMedia("image/png", stickerData, "sticker.png");
-        return [media, stickerOptions];
+      if (isTextMessage(message.type)) {
+        return await this.processTextMessage(message, stickerOptions);
       }
       
-      if (message.type === "sticker") {
-        const media = await message.downloadMedia();
-        return [media, {}]; // Special flag for reply handling
+      if (isStickerMessage(message.type)) {
+        return await this.processStickerMessage(message);
       }
       
-      return [undefined, undefined];
+      return undefined;
     } catch (err) {
       throw err;
     }
+  }
+
+  private async processMediaMessage(message: Message, stickerOptions: MessageSendOptions): Promise<ProcessedMessage> {
+    const media = await message.downloadMedia();
+    return { media, stickerOptions };
+  }
+
+  private async processTextMessage(message: Message, stickerOptions: MessageSendOptions): Promise<ProcessedMessage> {
+    const text = message.body;
+    const maxLength = this.finalConfig.maxTextLength;
+    
+    if (text.length > maxLength) {
+      throw new StringTooLongForSticker(text.length);
+    }
+
+    const stickerData = await this.textService.generateImage(text);
+    const media = new MessageMedia("image/png", stickerData, "sticker.png");
+    return { media, stickerOptions };
+  }
+
+  private async processStickerMessage(message: Message): Promise<ProcessedMessage> {
+    const media = await message.downloadMedia();
+    return { media };
   }
 
   private async retrieveUnreadMessages(): Promise<void> {
