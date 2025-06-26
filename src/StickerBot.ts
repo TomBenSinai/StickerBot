@@ -121,23 +121,14 @@ export class StickerBot implements IBotService {
 
   private async handlePrivateMessage(message: Message, chat: Chat): Promise<void> {
     try {
-      if (message.type === "image" || message.type === "video") {
-        const media = await message.downloadMedia();
-        await chat.sendMessage(media, this.getStickerOptions());
-      } else if (message.type === "chat") {
-        const text = message.body;
-        const maxLength = this.finalConfig.maxTextLength;
-        
-        if (text.length > maxLength) {
-          throw new StringTooLongForSticker(text.length);
+      const [mediaData, options] = await this.processMessage(message);
+      if (mediaData) {
+        // Handle sticker replies differently
+        if ('sendAsReply' in options) {
+          await message.reply(mediaData);
+        } else {
+          await chat.sendMessage(mediaData, options);
         }
-        
-        const stickerData = await this.textService.generateImage(text);
-        const imageSticker = new MessageMedia("image/png", stickerData, "sticker.png");
-        await chat.sendMessage(imageSticker, this.getStickerOptions());
-      } else if (message.type === "sticker") {
-        const media = await message.downloadMedia();
-        await message.reply(media);
       }
     } catch (err) {
       throw err; // Re-throw to be handled by main error handler
@@ -185,7 +176,7 @@ export class StickerBot implements IBotService {
       
       if (message.type === "sticker") {
         const media = await message.downloadMedia();
-        return [media, {}];
+        return [media, { sendAsReply: true }]; // Special flag for reply handling
       }
       
       return [undefined, undefined];
