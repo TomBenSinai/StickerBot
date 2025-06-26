@@ -10,7 +10,7 @@ A WhatsApp bot that turns your text and media into stickers instantly!
 >
 > **By using this bot, you acknowledge and accept these risks.** We are not responsible for any account restrictions or bans
 
-## Supporter features
+## Supported features
 
 - Text to Stickers
 - Media to Stickers
