@@ -1,10 +1,10 @@
-import { Client, LocalAuth, Message, MessageMedia, MessageSendOptions } from 'whatsapp-web.js';
+ import { Client, LocalAuth, Message, MessageMedia, MessageSendOptions } from 'whatsapp-web.js';
 import qrcode from 'qrcode-terminal';
 import clc from 'cli-color';
 
 import { BotConfig, IBotService, StickerOptions } from './types/BotConfig';
 import { mergeWithDefaults, ResolvedBotConfig } from './config/DefaultConfig';
-import { TextToImageService } from './services/TextToImageService';
+import { TextToImageService } from './services/TextToImage/TextToImageService';
 import { StringTooLongForSticker } from './utils';
 import { ProcessedMessage, isMediaMessage, isTextMessage, isStickerMessage } from './types/Message';
 
@@ -21,7 +21,10 @@ export class StickerBot implements IBotService {
 
   constructor(userConfig: BotConfig = {}) {
     this.finalConfig = mergeWithDefaults(userConfig);
-    this.textService = new TextToImageService(this.finalConfig.fontPath);
+    this.textService = new TextToImageService({
+      rtlFont: this.finalConfig.rtlFont,
+      ltrFont: this.finalConfig.ltrFont
+    });
     // this.adminService = new AdminService(); // TODO: Implement use of admin service
     // this.mentionService = new MentionService(); // TODO: Implement use of mention service
     this.client = this.initializeClient();
@@ -29,12 +32,19 @@ export class StickerBot implements IBotService {
   }
 
   private initializeClient(): Client {
+    const puppeteerConfig: any = {
+      headless: this.finalConfig.headless,
+      args: this.finalConfig.puppeteerArgs
+    };
+
+    // Use Chrome if executable path is provided
+    if (this.finalConfig.executablePath) {
+      puppeteerConfig.executablePath = this.finalConfig.executablePath;
+    }
+
     return new Client({
       authStrategy: new LocalAuth(),
-      puppeteer: {
-        headless: this.finalConfig.headless,
-        args: this.finalConfig.puppeteerArgs
-      }
+      puppeteer: puppeteerConfig
     });
   }
 
@@ -76,6 +86,7 @@ export class StickerBot implements IBotService {
       sendMediaAsSticker: true,
       stickerAuthor: this.finalConfig.stickerOptions.stickerAuthor,
       stickerName: this.finalConfig.stickerOptions.stickerName,
+      stickerCategories: this.finalConfig.stickerOptions.stickerCategories,
     };
   }
 
@@ -105,7 +116,9 @@ export class StickerBot implements IBotService {
   private async handleMessageReply(message: Message, isGroup: boolean): Promise<void> {
     const processedData = await this.getProcessedData(message, isGroup);
     if (processedData) {
-      await message.reply(processedData.media, undefined, processedData.stickerOptions);
+      const options = processedData.stickerOptions || this.getStickerOptions();
+      console.log(clc.cyan(`Sending sticker with options:`, JSON.stringify(options, null, 2)));
+      await message.reply(processedData.media, undefined, options);
     }
   }
 
@@ -214,11 +227,11 @@ export class StickerBot implements IBotService {
       const chats = await this.client.getChats();
       for (const chat of chats) {
         if (chat.unreadCount > 0) {
-          chat.sendSeen();
           const unreadMessages = await chat.fetchMessages({ limit: chat.unreadCount });
           for (const message of unreadMessages) {
             await this.processIncomingMessage(message);
           }
+          chat.sendSeen();
         }
       }
     } catch (err) {
