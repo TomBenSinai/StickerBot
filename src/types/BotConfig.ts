@@ -1,14 +1,23 @@
+export interface FontConfig {
+  path: string;
+  family: string;
+  weight: string;
+}
+
 export interface BotConfig {
   headless?: boolean;
-  fontPath?: string;
+  rtlFont?: FontConfig;
+  ltrFont?: FontConfig;
   maxTextLength?: number;
   puppeteerArgs?: string[];
+  executablePath?: string;
   stickerOptions?: StickerOptions;
 }
 
 export interface StickerOptions {
   stickerAuthor?: string;
   stickerName?: string;
+  stickerCategories?: string[];
 }
 
 export interface IBotService {

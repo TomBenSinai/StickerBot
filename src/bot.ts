@@ -7,7 +7,7 @@ async function main() {
     
     const bot = process.env.NODE_ENV === 'production' 
       ? BotFactory.createProduction()
-      : BotFactory.createDefault();
+      : BotFactory.createDevelopment();
 
     await bot.start();
     
