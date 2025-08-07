@@ -8,6 +8,7 @@ import { mergeWithDefaults, ResolvedBotConfig } from './config/DefaultConfig';
 import { TextToImageService } from './services/TextToImage/TextToImageService';
 import { StringTooLongForSticker } from './utils';
 import { ProcessedMessage, isMediaMessage, isTextMessage, isStickerMessage } from './types/Message';
+import { loadStickerCount, saveStickerCount } from './utils/StickerCounter';
 
 export class StickerBot implements IBotService {
   private client: Client;
@@ -19,6 +20,7 @@ export class StickerBot implements IBotService {
   private isRetrievingUnreadMessages: boolean = true;
   private messageQueue: Message[] = [];
   private isProcessingQueue: boolean = false;
+  private stickerCount: number = 0;
 
   constructor(userConfig: BotConfig = {}) {
     this.finalConfig = mergeWithDefaults(userConfig);
@@ -67,9 +69,11 @@ export class StickerBot implements IBotService {
 
   private async handleReady(): Promise<void> {
     console.log(clc.green("Client is up and running!"));
+    this.stickerCount = await loadStickerCount();
+    await this.client.setStatus(`Stickers made: ${this.stickerCount}`);
     await this.retrieveUnreadMessages();
     this.isRetrievingUnreadMessages = false;
-    
+
     // Process any messages that arrived while we were processing unread messages
     await this.processQueuedMessages();
   }
@@ -120,6 +124,7 @@ export class StickerBot implements IBotService {
       const options = processedData.stickerOptions || this.getStickerOptions();
       console.log(clc.cyan(`Sending sticker with options:`, JSON.stringify(options, null, 2)));
       await message.reply(processedData.media, undefined, options);
+      await this.incrementStickerCount();
     }
   }
 
@@ -225,6 +230,12 @@ export class StickerBot implements IBotService {
     const pngBase64 = pngBuffer.toString('base64');
     const image = new MessageMedia('image/png', pngBase64, 'sticker.png');
     return { media: image, stickerOptions: { sendMediaAsSticker: false } };
+  }
+
+  private async incrementStickerCount(): Promise<void> {
+    this.stickerCount += 1;
+    await saveStickerCount(this.stickerCount);
+    await this.client.setStatus(`Stickers made: ${this.stickerCount}`);
   }
 
   private async retrieveUnreadMessages(): Promise<void> {
