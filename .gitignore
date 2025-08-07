@@ -1,7 +1,6 @@
 .wwebjs*
 test.js
 node_modules/
-test*
 .idea
 .vs/*
 .cursor/*
