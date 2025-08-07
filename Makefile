@@ -69,17 +69,22 @@ install-linux: deps
 	@wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
 	@echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
 	@sudo apt update && sudo apt install -y google-chrome-stable
+	@mkdir -p assets/fonts
+	@curl -L -o assets/fonts/NotoColorEmoji.ttf https://github.com/googlefonts/noto-emoji/raw/main/fonts/NotoColorEmoji.ttf
 
 install-macos: deps
 	@brew install ffmpeg
 	@brew install --cask google-chrome
+	@mkdir -p assets/fonts
+	@curl -L -o assets/fonts/NotoColorEmoji.ttf https://github.com/googlefonts/noto-emoji/raw/main/fonts/NotoColorEmoji.ttf
 
 install-windows: deps
 	@echo "Windows setup instructions:"
 	@echo "  1. Download FFmpeg from: https://www.gyan.dev/ffmpeg/builds/"
 	@echo "  2. Extract and add to PATH"
 	@echo "  3. Download Chrome from: https://www.google.com/chrome/"
-	@echo "  4. Run: make verify"
+	@echo "  4. Run: install.bat to fetch Noto Color Emoji font"
+	@echo "  5. Run: make verify"
 
 quick-start-linux: install-linux build verify dev
 

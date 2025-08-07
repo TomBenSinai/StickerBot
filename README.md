@@ -18,9 +18,10 @@ A WhatsApp bot that turns your text and media into stickers instantly!
 
 ## Quick Start
 
-1. **Install dependencies**
+1. **Install dependencies and fonts**
    ```bash
    npm install
+   ./install.sh    # downloads Noto Color Emoji for emoji rendering
    ```
 
 2. **Setup Chrome and FFmpeg**

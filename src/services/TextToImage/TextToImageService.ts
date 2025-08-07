@@ -1,4 +1,6 @@
 import { createCanvas, registerFont, CanvasRenderingContext2D } from "canvas";
+import path from "path";
+import fs from "fs";
 import { direction } from "direction";
 import { ITextToImageService } from "../../types/BotConfig";
 import { DEFAULT_OPTIONS, TextToImageOptions, FontConfig } from "./defaults";
@@ -32,20 +34,34 @@ export class TextToImageService implements ITextToImageService {
 
   private initializeFont(): void {
     try {
-      registerFont(this.rtlFont.path, { 
-        family: this.rtlFont.family, 
-        weight: this.rtlFont.weight as any 
+      registerFont(this.rtlFont.path, {
+        family: this.rtlFont.family,
+        weight: this.rtlFont.weight as any
       });
-      
-      registerFont(this.ltrFont.path, { 
-        family: this.ltrFont.family, 
-        weight: this.ltrFont.weight as any 
+
+      registerFont(this.ltrFont.path, {
+        family: this.ltrFont.family,
+        weight: this.ltrFont.weight as any
       });
-      
+
       this.fontRegistered = true;
     } catch (err) {
-      console.warn("Could not register fonts, using system fonts");
+      console.warn("Could not register custom fonts, using system fonts");
       this.fontRegistered = false;
+    }
+
+    const emojiFontPath = path.resolve(__dirname, "../../../assets/fonts/NotoColorEmoji.ttf");
+    if (fs.existsSync(emojiFontPath)) {
+      try {
+        registerFont(emojiFontPath, {
+          family: "Noto Color Emoji",
+          weight: "normal" as any
+        });
+      } catch (err) {
+        console.warn("Failed to register emoji font");
+      }
+    } else {
+      console.warn("Emoji font not found; emojis may render as hex codes");
     }
   }
 
@@ -146,14 +162,16 @@ export class TextToImageService implements ITextToImageService {
   }
 
   private getFontFamily(textDirection: string): string {
+    const emojiFallback = '"Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji"';
+
     if (!this.fontRegistered) {
-      return 'Arial, sans-serif';
+      return `${emojiFallback}, Arial, sans-serif`;
     }
 
     if (textDirection === 'rtl') {
-      return `"${this.rtlFont.family}", Arial, sans-serif`;
+      return `"${this.rtlFont.family}", ${emojiFallback}, Arial, sans-serif`;
     } else {
-      return `"${this.ltrFont.family}", Arial, sans-serif`;
+      return `"${this.ltrFont.family}", ${emojiFallback}, Arial, sans-serif`;
     }
   }
 
