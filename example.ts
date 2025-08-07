@@ -73,10 +73,10 @@ async function robustExample() {
   }
 }
 
-// Example 1: Using default fonts (RTL: CustomFont normal, LTR: Open Sans bold)
+// Example 5: Using default fonts (RTL: CustomFont normal, LTR: Open Sans bold)
 const bot1 = new StickerBot();
 
-// Example 2: Custom font configuration
+// Example 6: Custom font configuration
 const bot2 = new StickerBot({
   rtlFont: {
     path: "./assets/fonts/font.ttf",
@@ -92,7 +92,7 @@ const bot2 = new StickerBot({
   headless: false
 });
 
-// Example 3: Different fonts for different text directions
+// Example 7: Different fonts for different text directions
 const bot3 = new StickerBot({
   rtlFont: {
     path: "./assets/fonts/font.ttf",
@@ -106,7 +106,7 @@ const bot3 = new StickerBot({
   }
 });
 
-// Example 4: Using specific Chrome installation for better video support
+// Example 8: Using specific Chrome installation for better video support
 const bot4 = new StickerBot({
   executablePath: "/usr/bin/google-chrome-stable", // Linux
   // executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", // Windows
