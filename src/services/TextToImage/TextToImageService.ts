@@ -146,14 +146,16 @@ export class TextToImageService implements ITextToImageService {
   }
 
   private getFontFamily(textDirection: string): string {
+    const emojiFallback = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji"';
+
     if (!this.fontRegistered) {
-      return 'Arial, sans-serif';
+      return `${emojiFallback}, Arial, sans-serif`;
     }
 
     if (textDirection === 'rtl') {
-      return `"${this.rtlFont.family}", Arial, sans-serif`;
+      return `"${this.rtlFont.family}", ${emojiFallback}, Arial, sans-serif`;
     } else {
-      return `"${this.ltrFont.family}", Arial, sans-serif`;
+      return `"${this.ltrFont.family}", ${emojiFallback}, Arial, sans-serif`;
     }
   }
 
