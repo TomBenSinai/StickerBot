@@ -38,6 +38,10 @@ COPY --from=builder --chown=stickerbot:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=stickerbot:nodejs /app/package*.json ./
 COPY --from=builder --chown=stickerbot:nodejs /app/assets ./assets
 
+# Download Noto Color Emoji font
+RUN wget -q -O /app/assets/fonts/NotoColorEmoji.ttf https://github.com/googlefonts/noto-emoji/raw/main/fonts/NotoColorEmoji.ttf && \
+    chown stickerbot:nodejs /app/assets/fonts/NotoColorEmoji.ttf
+
 ENV CHROME_BIN=/usr/bin/chromium-browser
 ENV CHROME_PATH=/usr/bin/chromium-browser
 

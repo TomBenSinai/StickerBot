@@ -44,3 +44,33 @@ test('wrapText handles text containing newline characters', () => {
     assert(ctx.measureText(line).width <= maxWidth, 'Line exceeds maxWidth');
   }
 });
+
+test('getFontFamily includes emoji fallbacks when custom fonts are registered', () => {
+  const service = new TextToImageService();
+  const ltrFamily = (service as any).getFontFamily('ltr');
+  assert.ok(ltrFamily.startsWith('"Open Sans"'), 'LTR font should start with custom font');
+  assert.ok(ltrFamily.includes('"Noto Color Emoji"'), 'Emoji fallback missing');
+  assert.ok(ltrFamily.includes('"Apple Color Emoji"'), 'Emoji fallback missing');
+  assert.ok(ltrFamily.includes('"Segoe UI Emoji"'), 'Emoji fallback missing');
+
+  const rtlFamily = (service as any).getFontFamily('rtl');
+  assert.ok(rtlFamily.startsWith('"CustomFont"'), 'RTL font should start with custom font');
+  assert.ok(rtlFamily.includes('"Noto Color Emoji"'), 'Emoji fallback missing');
+  assert.ok(rtlFamily.includes('"Apple Color Emoji"'), 'Emoji fallback missing');
+});
+
+test('getFontFamily falls back to emoji fonts when custom fonts are unavailable', () => {
+  const service = new TextToImageService();
+  (service as any).fontRegistered = false;
+  const family = (service as any).getFontFamily('ltr');
+  assert.ok(family.startsWith('"Noto Color Emoji"'), 'Fallback should start with emoji fonts');
+  assert.ok(!family.includes('"Open Sans"'), 'Should not include custom font when fonts are unregistered');
+});
+
+test('generateImage renders emoji glyphs rather than hex codes', async () => {
+  const service = new TextToImageService();
+  const base64 = await service.generateImage('😀');
+  const buf = Buffer.from(base64, 'base64');
+  const ascii = buf.toString('utf8');
+  assert.ok(!ascii.includes('1F600'), 'Emoji was rendered as hex code');
+});

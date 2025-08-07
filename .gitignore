@@ -7,3 +7,5 @@ node_modules/
 
 # Compiled TypeScript output
 dist/
+assets/fonts/NotoColorEmoji.ttf
+

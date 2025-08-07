@@ -7,6 +7,15 @@ echo "Installing StickerBot dependencies..."
 echo "Installing Node.js dependencies..."
 npm install
 
+# Download Noto Color Emoji font
+echo "Downloading Noto Color Emoji font..."
+if [ ! -f assets/fonts/NotoColorEmoji.ttf ]; then
+    mkdir -p assets/fonts
+    curl -L -o assets/fonts/NotoColorEmoji.ttf https://github.com/googlefonts/noto-emoji/raw/main/fonts/NotoColorEmoji.ttf
+else
+    echo "Noto Color Emoji font already exists"
+fi
+
 # Install ffmpeg
 echo "Installing FFmpeg..."
 if command -v ffmpeg &> /dev/null; then
