@@ -68,8 +68,8 @@ export class TextToImageService implements ITextToImageService {
       ctx.textBaseline = this.textBaseline;
 
       // Find optimal font size that fills the height first
-      const maxWidth = canvas.width - this.padding;
-      const maxHeight = canvas.height - this.padding;
+      const maxWidth = canvas.width - this.padding * 2;
+      const maxHeight = canvas.height - this.padding * 2;
       
       let bestFontSize = 20;
       let bestLines: string[] = [];
