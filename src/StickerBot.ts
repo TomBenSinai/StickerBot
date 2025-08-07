@@ -1,6 +1,7 @@
- import { Client, LocalAuth, Message, MessageMedia, MessageSendOptions } from 'whatsapp-web.js';
+import { Client, LocalAuth, Message, MessageMedia, MessageSendOptions } from 'whatsapp-web.js';
 import qrcode from 'qrcode-terminal';
 import clc from 'cli-color';
+import sharp from 'sharp';
 
 import { BotConfig, IBotService, StickerOptions } from './types/BotConfig';
 import { mergeWithDefaults, ResolvedBotConfig } from './config/DefaultConfig';
@@ -219,7 +220,11 @@ export class StickerBot implements IBotService {
 
   private async processStickerMessage(message: Message): Promise<ProcessedMessage> {
     const media = await message.downloadMedia();
-    return { media };
+    const webpBuffer = Buffer.from(media.data, 'base64');
+    const pngBuffer = await sharp(webpBuffer).png().toBuffer();
+    const pngBase64 = pngBuffer.toString('base64');
+    const image = new MessageMedia('image/png', pngBase64, 'sticker.png');
+    return { media: image, stickerOptions: { sendMediaAsSticker: false } };
   }
 
   private async retrieveUnreadMessages(): Promise<void> {
