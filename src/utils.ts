@@ -62,7 +62,8 @@ export function findFFmpegExecutable(): string | null {
     execSync('ffmpeg -version', { stdio: 'pipe' });
     return 'ffmpeg';
   } catch {
-    const localFFmpeg = path.join(process.cwd(), 'bin', 'ffmpeg');
+    const ffmpegName = platform() === 'win32' ? 'ffmpeg.exe' : 'ffmpeg';
+    const localFFmpeg = path.join(process.cwd(), 'bin', ffmpegName);
     if (existsSync(localFFmpeg)) {
       return localFFmpeg;
     }
