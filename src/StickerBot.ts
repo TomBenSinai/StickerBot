@@ -117,7 +117,7 @@ export class StickerBot implements IBotService {
   private async handleMessageReply(message: Message, isGroup: boolean): Promise<void> {
     const processedData = await this.getProcessedData(message, isGroup);
     if (processedData) {
-      const options = processedData.stickerOptions || this.getStickerOptions();
+      const options = { ...this.getStickerOptions(), ...(processedData.stickerOptions || {}) };
       console.log(clc.cyan(`Sending sticker with options:`, JSON.stringify(options, null, 2)));
       await message.reply(processedData.media, undefined, options);
     }
