@@ -1,4 +1,4 @@
-.PHONY: help install setup build dev start clean test lint format deps chrome ffmpeg verify docker
+.PHONY: help install setup build dev start clean test lint format deps setup-chrome setup-ffmpeg verify docker
 
 install: deps setup
 	@echo "Installation completed!"
