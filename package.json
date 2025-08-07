@@ -15,7 +15,8 @@
     "setup:ffmpeg": "npm run setup ffmpeg",
     "setup:chrome": "npm run setup chrome",
     "setup:verify": "npm run setup verify",
-    "setup:scripts": "npm run setup scripts"
+    "setup:scripts": "npm run setup scripts",
+    "test": "node --test --require ts-node/register tests/**/*.test.ts"
   },
   "author": "",
   "license": "ISC",
@@ -43,6 +44,7 @@
     "@types/node": "^24.0.3",
     "@types/qrcode-terminal": "^0.12.2",
     "@types/sharp": "^0.31.1",
+    "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   }
 }
