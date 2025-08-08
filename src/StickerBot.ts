@@ -2,8 +2,9 @@ import { Client, LocalAuth, Message, MessageMedia, MessageSendOptions } from 'wh
 import qrcode from 'qrcode-terminal';
 import clc from 'cli-color';
 import sharp from 'sharp';
+import { Sticker, StickerTypes } from 'wa-sticker-formatter';
 
-import { BotConfig, IBotService, StickerOptions } from './types/BotConfig';
+import { BotConfig, IBotService } from './types/BotConfig';
 import { mergeWithDefaults, ResolvedBotConfig } from './config/DefaultConfig';
 import { TextToImageService } from './services/TextToImage/TextToImageService';
 import { StringTooLongForSticker } from './utils';
@@ -118,8 +119,11 @@ export class StickerBot implements IBotService {
     const processedData = await this.getProcessedData(message, isGroup);
     if (processedData) {
       const options = this.mergeStickerOptions(processedData.stickerOptions);
-      console.log(clc.cyan(`Sending sticker with options:`, JSON.stringify(options, null, 2)));
-      await message.reply(processedData.media, undefined, options);
+      const media = options.sendMediaAsSticker
+        ? await this.embedStickerMetadata(processedData.media, options)
+        : processedData.media;
+      console.log(clc.cyan('Sending sticker with options:'), JSON.stringify(options, null, 2));
+      await message.reply(media, undefined, options);
     }
   }
 
@@ -132,6 +136,19 @@ export class StickerBot implements IBotService {
     ) as MessageSendOptions;
 
     return { ...base, ...sanitized };
+  }
+
+  private async embedStickerMetadata(media: MessageMedia, options: MessageSendOptions): Promise<MessageMedia> {
+    const buffer = Buffer.from(media.data, 'base64');
+    const sticker = new Sticker(buffer, {
+      type: StickerTypes.FULL,
+      quality: 100,
+      author: options.stickerAuthor || '',
+      pack: options.stickerName || '',
+      categories: options.stickerCategories as any,
+    });
+    const webp = await sticker.build();
+    return new MessageMedia('image/webp', webp.toString('base64'), 'sticker.webp');
   }
 
   private async handleMessageError(message: Message, err: any): Promise<void> {
