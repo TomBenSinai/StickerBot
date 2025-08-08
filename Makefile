@@ -37,7 +37,7 @@ rebuild:
 	@npm run rebuild
 
 lint:
-	@npx tsc --noEmit
+	@npm run lint
 
 format:
 	@npx prettier --write "src/**/*.ts" "*.ts" "*.js" "*.json" || echo "⚠️  Prettier not configured"
