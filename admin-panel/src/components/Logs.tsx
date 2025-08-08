@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ScrollArea } from '@mantine/core'
+import { AnsiUp } from 'ansi_up'
 import { fetchLogs } from '../api'
 
 const POLL_INTERVAL_MS = 1000
@@ -14,6 +15,9 @@ interface LogsProps {
   readonly filterText?: string
   readonly onBindApi?: (api: LogsApi) => void
 }
+
+const ansi = new AnsiUp()
+ansi.use_classes = false
 
 const Logs: React.FC<LogsProps> = ({ autoScroll = true, filterText = '', onBindApi }) => {
   const [logs, setLogs] = useState<string[]>([])
@@ -92,7 +96,7 @@ const Logs: React.FC<LogsProps> = ({ autoScroll = true, filterText = '', onBindA
     onBindApi(api)
   }, [onBindApi, handleJumpToLatest])
 
-  const filteredText = useMemo(() => {
+  const filteredLines = useMemo(() => {
     if (!filterText.trim()) return logs
     try {
       const re = new RegExp(filterText, 'i')
@@ -101,6 +105,11 @@ const Logs: React.FC<LogsProps> = ({ autoScroll = true, filterText = '', onBindA
       return logs.filter((line) => line.toLowerCase().includes(filterText.toLowerCase()))
     }
   }, [logs, filterText])
+
+  const html = useMemo(() => {
+    // Convert each line separately to preserve line breaks and colors
+    return filteredLines.map((line) => ansi.ansi_to_html(line)).join('\n')
+  }, [filteredLines])
 
   return (
     <ScrollArea h={300} viewportRef={viewportRef} style={{ background: '#0b0f17' }}>
@@ -115,9 +124,8 @@ const Logs: React.FC<LogsProps> = ({ autoScroll = true, filterText = '', onBindA
           lineHeight: 1.4,
           whiteSpace: 'pre-wrap',
         }}
-      >
-        {filteredText.join('\n')}
-      </pre>
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
     </ScrollArea>
   )
 }
