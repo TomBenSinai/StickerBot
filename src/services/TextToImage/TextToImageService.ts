@@ -69,8 +69,6 @@ export class TextToImageService implements ITextToImageService {
     try {
       const canvas = createCanvas(this.canvasWidth, this.canvasHeight);
       const ctx = canvas.getContext("2d") as any;
-      // Ensure emojis render with native colors (not monochrome paths)
-      ctx.textDrawingMode = "glyph";
 
       // Detect text direction
       const textDirection = direction(text);
