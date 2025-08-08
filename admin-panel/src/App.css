@@ -1,0 +1,13 @@
+#root {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem;
+  font-family: sans-serif;
+}
+
+pre {
+  text-align: left;
+  background-color: #f4f4f4;
+  padding: 1rem;
+  overflow: auto;
+}

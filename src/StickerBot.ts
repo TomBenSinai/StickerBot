@@ -21,6 +21,7 @@ export class StickerBot implements IBotService {
   private messageQueue: Message[] = [];
   private isProcessingQueue: boolean = false;
   private stickerCount: number = 0;
+  private latestQr: string | null = null;
 
   constructor(userConfig: BotConfig = {}) {
     this.finalConfig = mergeWithDefaults(userConfig);
@@ -63,6 +64,7 @@ export class StickerBot implements IBotService {
   }
 
   private handleQR(qr: string): void {
+    this.latestQr = qr;
     console.log(clc.yellow('Please scan the QR code below:'));
     qrcode.generate(qr, { small: true });
   }
@@ -294,7 +296,7 @@ export class StickerBot implements IBotService {
     }
   }
 
-  async stop(): Promise<void> {
+  async stop(exit: boolean = true): Promise<void> {
     if (!this.isRunning) {
       return;
     }
@@ -304,14 +306,30 @@ export class StickerBot implements IBotService {
       await this.client.destroy();
       this.isRunning = false;
       console.log(clc.green('Bot stopped successfully'));
-      process.exit(0);
+      if (exit) {
+        process.exit(0);
+      }
     } catch (err) {
       console.error(clc.red('Error stopping bot:'), err);
-      process.exit(1);
+      if (exit) {
+        process.exit(1);
+      }
     }
+  }
+
+  async restart(): Promise<void> {
+    console.log(clc.yellow('Restarting StickerBot...'));
+    await this.stop(false);
+    this.client = this.initializeClient();
+    this.setupEventHandlers();
+    await this.start();
+  }
+
+  getLatestQr(): string | null {
+    return this.latestQr;
   }
 
   isClientReady(): boolean {
     return this.isRunning;
   }
-} 
+}
