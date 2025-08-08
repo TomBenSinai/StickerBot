@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import { Button, Group, Image, Stack } from '@mantine/core'
+import { modals } from '@mantine/modals'
+import { IconPlayerPlay, IconQrcode } from '@tabler/icons-react'
 import { requestQr, restartBot } from '../api'
 
 const ControlPanel: React.FC = () => {
@@ -8,6 +11,7 @@ const ControlPanel: React.FC = () => {
     try {
       await restartBot()
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error(err)
     }
   }
@@ -16,23 +20,30 @@ const ControlPanel: React.FC = () => {
     try {
       const code = await requestQr()
       setQr(code)
+      if (code) {
+        modals.open({
+          title: 'Scan to authenticate',
+          children: <Image src={code} alt="QR" w={280} h={280} fit="contain" radius="md" />,
+          centered: true,
+          size: 'md',
+        })
+      }
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error(err)
     }
   }
 
   return (
-    <div className="controls">
-      <div className="buttonRow">
-        <button className="primary" onClick={handleRestart}>Restart Bot</button>
-        <button className="secondary" onClick={handleQr}>Request QR</button>
-      </div>
+    <Stack gap="sm">
+      <Group wrap="wrap">
+        <Button onClick={handleRestart} variant="filled" color="blue" leftSection={<IconPlayerPlay size={16} />}>Restart Bot</Button>
+        <Button onClick={handleQr} variant="default" leftSection={<IconQrcode size={16} />}>Request QR</Button>
+      </Group>
       {qr && (
-        <div className="qrPreview">
-          <img src={qr} alt="QR" />
-        </div>
+        <Image src={qr} alt="QR" w={240} h={240} fit="contain" radius="md" mx="auto" />
       )}
-    </div>
+    </Stack>
   )
 }
 

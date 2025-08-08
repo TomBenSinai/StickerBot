@@ -1,14 +1,27 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ScrollArea } from '@mantine/core'
 import { fetchLogs } from '../api'
 
 const POLL_INTERVAL_MS = 1000
 const BOTTOM_THRESHOLD_PX = 20
 
-const Logs: React.FC = () => {
+export interface LogsApi {
+  jumpToLatest: () => void
+}
+
+interface LogsProps {
+  readonly autoScroll?: boolean
+  readonly filterText?: string
+  readonly onBindApi?: (api: LogsApi) => void
+}
+
+const Logs: React.FC<LogsProps> = ({ autoScroll = true, filterText = '', onBindApi }) => {
   const [logs, setLogs] = useState<string[]>([])
-  const [isAutoScroll, setIsAutoScroll] = useState(true)
+  const [isAutoScrollInternal, setIsAutoScrollInternal] = useState(true)
   const viewportRef = useRef<HTMLDivElement | null>(null)
   const isAutoScrollRef = useRef(true)
+
+  const effectiveAutoScroll = autoScroll && isAutoScrollInternal
 
   const scrollToBottom = useCallback(() => {
     const el = viewportRef.current
@@ -23,10 +36,16 @@ const Logs: React.FC = () => {
     return distanceFromBottom <= BOTTOM_THRESHOLD_PX
   }, [])
 
-  const handleScroll = useCallback(() => {
-    const atBottom = evaluateIsAtBottom()
-    isAutoScrollRef.current = atBottom
-    setIsAutoScroll(atBottom)
+  useEffect(() => {
+    const el = viewportRef.current
+    if (!el) return
+    const onScroll = () => {
+      const atBottom = evaluateIsAtBottom()
+      isAutoScrollRef.current = atBottom
+      setIsAutoScrollInternal(atBottom)
+    }
+    el.addEventListener('scroll', onScroll)
+    return () => el.removeEventListener('scroll', onScroll)
   }, [evaluateIsAtBottom])
 
   useEffect(() => {
@@ -43,7 +62,6 @@ const Logs: React.FC = () => {
       }
     }
 
-    // initial load quickly
     void tick()
 
     const id = setInterval(() => {
@@ -57,36 +75,50 @@ const Logs: React.FC = () => {
   }, [])
 
   useEffect(() => {
-    if (isAutoScrollRef.current) {
+    if (effectiveAutoScroll) {
       scrollToBottom()
     }
-  }, [logs, scrollToBottom])
+  }, [logs, effectiveAutoScroll, scrollToBottom])
 
-  const handleJumpToLatest = () => {
+  const handleJumpToLatest = useCallback(() => {
     isAutoScrollRef.current = true
-    setIsAutoScroll(true)
+    setIsAutoScrollInternal(true)
     scrollToBottom()
-  }
+  }, [scrollToBottom])
+
+  useEffect(() => {
+    if (!onBindApi) return
+    const api: LogsApi = { jumpToLatest: handleJumpToLatest }
+    onBindApi(api)
+  }, [onBindApi, handleJumpToLatest])
+
+  const filteredText = useMemo(() => {
+    if (!filterText.trim()) return logs
+    try {
+      const re = new RegExp(filterText, 'i')
+      return logs.filter((line) => re.test(line))
+    } catch (_err) {
+      return logs.filter((line) => line.toLowerCase().includes(filterText.toLowerCase()))
+    }
+  }, [logs, filterText])
 
   return (
-    <section className="card logsCard">
-      <div className="logsHeader">
-        <h2>Logs</h2>
-        {!isAutoScroll && (
-          <button className="secondary" onClick={handleJumpToLatest}>
-            Jump to latest
-          </button>
-        )}
-      </div>
-      <div
-        className="logsViewport"
-        ref={viewportRef}
-        onScroll={handleScroll}
-        aria-label="Logs viewport"
+    <ScrollArea h={300} viewportRef={viewportRef} style={{ background: '#0b0f17' }}>
+      <pre
+        style={{
+          margin: 0,
+          padding: '12px 16px',
+          color: '#a3e635',
+          fontFamily:
+            'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+          fontSize: 12.5,
+          lineHeight: 1.4,
+          whiteSpace: 'pre-wrap',
+        }}
       >
-        <pre className="logsPre">{logs.join('\n')}</pre>
-      </div>
-    </section>
+        {filteredText.join('\n')}
+      </pre>
+    </ScrollArea>
   )
 }
 
