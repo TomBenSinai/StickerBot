@@ -8,7 +8,7 @@ import { rm as remove } from 'node:fs/promises';
 const logs: string[] = [];
 const sseClients: Response[] = [];
 
-type BotState = 'starting' | 'ready' | 'restarting' | 'error';
+type BotState = 'starting' | 'awaiting-qr' | 'ready' | 'restarting' | 'error';
 interface BotStatus {
   state: BotState;
   since: string;
@@ -31,7 +31,7 @@ const sendSse = (res: Response, event: string, data: unknown): void => {
   } catch {
     // ignore write errors (client likely disconnected)
   }
-}
+};
 
 function broadcast(event: string, data: unknown): void {
   for (const client of [...sseClients]) {
@@ -44,6 +44,9 @@ function updateStatus(newState: BotState, message?: string): void {
   broadcast('status', status);
 }
 
+let lastQrSent: string | null = null;
+let lastAwaitingAt: number | null = null;
+
 const record = (type: 'log' | 'error', args: unknown[]): void => {
   const message = args.map(arg => typeof arg === 'string' ? arg : JSON.stringify(arg)).join(' ');
   const entry = `[${new Date().toISOString()}] ${message}`;
@@ -52,6 +55,14 @@ const record = (type: 'log' | 'error', args: unknown[]): void => {
     logs.shift();
   }
   broadcast('log', entry);
+
+  // Detect ready from known log line
+  if (message.includes('Client is up and running!')) {
+    lastQrSent = null;
+    lastAwaitingAt = null;
+    updateStatus('ready', 'Bot is ready');
+  }
+
   if (type === 'log') {
     originalLog(...args);
   } else {
@@ -72,9 +83,30 @@ async function main(): Promise<void> {
 
     updateStatus('starting', 'Starting bot');
     await bot.start();
-    updateStatus('ready', 'Bot is ready');
+    // Do not mark ready here; wait for the actual ready log or QR
 
     const app = express();
+
+    // Watch for QR changes periodically and broadcast
+    setInterval(async () => {
+      try {
+        const qr = bot.getLatestQr();
+        if (qr && qr !== lastQrSent) {
+          const dataUrl = await toDataURL(qr);
+          lastQrSent = qr;
+          lastAwaitingAt = Date.now();
+          updateStatus('awaiting-qr', 'Waiting for scan');
+          broadcast('qr', dataUrl);
+        }
+        // Safety: if we've been awaiting-qr for a long time but no new QR and not ready, nudge status
+        if (status.state === 'awaiting-qr' && lastAwaitingAt && Date.now() - lastAwaitingAt > 120000) {
+          // 2 minutes elapsed; re-emit status to keep UI fresh
+          broadcast('status', status);
+        }
+      } catch (e) {
+        // ignore
+      }
+    }, 1000);
 
     // SSE endpoint that streams status and logs
     app.get('/api/events', (req: Request, res: Response) => {
@@ -101,18 +133,22 @@ async function main(): Promise<void> {
 
     app.post('/api/restart', async (_req: Request, res: Response) => {
       updateStatus('restarting', 'Restarting bot');
+      lastQrSent = null;
+      bot.clearLatestQr();
       await bot.restart();
-      updateStatus('ready', 'Bot is ready');
+      // Await QR or ready via logs
       res.sendStatus(200);
     });
 
     app.post('/api/reset-auth', async (_req: Request, res: Response) => {
       try {
         updateStatus('restarting', 'Resetting auth and restarting');
+        lastQrSent = null;
+        bot.clearLatestQr();
         const authDir = path.resolve(process.cwd(), '.wwebjs_auth');
         await remove(authDir, { recursive: true, force: true });
         await bot.restart();
-        updateStatus('ready', 'Bot is ready');
+        // Await QR or ready via logs
         res.sendStatus(200);
       } catch (err) {
         console.error(clc.red('Failed to reset auth and restart bot:'), err);

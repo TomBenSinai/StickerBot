@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AppShell, ActionIcon, Badge, Button, Card, Container, Grid, Group, SegmentedControl, Stack, Text, TextInput, Title, Tooltip } from '@mantine/core'
+import { AppShell, ActionIcon, Button, Card, Container, Grid, Group, SegmentedControl, Stack, Text, TextInput, Title, Tooltip, useMantineTheme, rgba } from '@mantine/core'
 import { useComputedColorScheme, useMantineColorScheme } from '@mantine/core'
 import { IconMoon, IconSun } from '@tabler/icons-react'
 import ControlPanel from './components/ControlPanel'
@@ -22,11 +22,12 @@ const ColorSchemeToggle = () => {
   )
 }
 
-const statusColor = (state: BotStatus['state']): string => {
+const statusColor = (state: BotStatus['state'] | 'unknown'): string => {
   switch (state) {
     case 'ready': return 'green'
     case 'starting': return 'yellow'
     case 'restarting': return 'orange'
+    case 'awaiting-qr': return 'grape'
     case 'error': return 'red'
     default: return 'gray'
   }
@@ -38,12 +39,27 @@ const App: React.FC = () => {
   const [logsApi, setLogsApi] = useState<LogsApi | null>(null)
   const [status, setStatus] = useState<BotStatus | null>(null)
 
+  const theme = useMantineTheme()
+  const colorScheme = useComputedColorScheme('light', { getInitialValueInEffect: true })
+
   useEffect(() => {
     const es = connectEvents({
       onStatus: (s) => setStatus(s),
     })
     return () => es.close()
   }, [])
+
+  const paletteKey = statusColor(status?.state ?? 'unknown') as keyof typeof theme.colors
+  const basePalette = theme.colors[paletteKey] || theme.colors.gray
+  const baseShade = basePalette[6]
+  const isDark = colorScheme === 'dark'
+
+  const bgColor = rgba(baseShade, isDark ? 0.14 : 0.08)
+  const borderColor = rgba(baseShade, isDark ? 0.28 : 0.18)
+  const titleColor = isDark ? basePalette[3] : basePalette[7]
+
+  const statusLabel = (status?.state ?? 'unknown').replaceAll('-', ' ').toUpperCase()
+  const sinceText = status?.since ? new Date(status.since).toLocaleString() : ''
 
   return (
     <AppShell header={{ height: 60 }} padding="md">
@@ -54,11 +70,6 @@ const App: React.FC = () => {
             <Text c="dimmed">Monitor and control the bot</Text>
           </Group>
           <Group gap="sm">
-            {status && (
-              <Badge color={statusColor(status.state)} variant="light">
-                {status.state}
-              </Badge>
-            )}
             <ColorSchemeToggle />
           </Group>
         </Group>
@@ -73,6 +84,14 @@ const App: React.FC = () => {
                 </Group>
                 <Stack>
                   <ControlPanel />
+                </Stack>
+              </Card>
+              <Card radius="md" padding="lg" mt="md" withBorder style={{ background: bgColor, borderColor }}>
+                <Stack gap={2}>
+                  <Title order={2} c={titleColor}>{statusLabel}</Title>
+                  {sinceText && (
+                    <Text size="sm" c="dimmed">since {sinceText}</Text>
+                  )}
                 </Stack>
               </Card>
             </Grid.Col>

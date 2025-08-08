@@ -68,6 +68,8 @@ export class StickerBot implements IBotService {
 
   private async handleReady(): Promise<void> {
     console.log(clc.green("Client is up and running!"));
+    // Clear any previously cached QR to avoid re-emitting stale codes after successful auth
+    this.latestQr = null;
     this.stickerCount = await loadStickerCount();
     await this.client.setStatus(`Stickers made: ${this.stickerCount}`);
     await this.retrieveUnreadMessages();
@@ -324,6 +326,10 @@ export class StickerBot implements IBotService {
 
   getLatestQr(): string | null {
     return this.latestQr;
+  }
+
+  clearLatestQr(): void {
+    this.latestQr = null;
   }
 
   isClientReady(): boolean {

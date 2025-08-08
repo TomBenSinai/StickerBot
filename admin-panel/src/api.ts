@@ -2,7 +2,7 @@ export interface LogsResponse {
   logs: string[]
 }
 
-export type BotState = 'starting' | 'ready' | 'restarting' | 'error'
+export type BotState = 'starting' | 'awaiting-qr' | 'ready' | 'restarting' | 'error'
 export interface BotStatus {
   state: BotState
   since: string
@@ -35,6 +35,7 @@ export interface EventsHandlers {
   onStatus?: (status: BotStatus) => void
   onLog?: (line: string) => void
   onLogsBatch?: (lines: string[]) => void
+  onQr?: (dataUrl: string) => void
 }
 
 export const connectEvents = (handlers: EventsHandlers): EventSource => {
@@ -55,6 +56,12 @@ export const connectEvents = (handlers: EventsHandlers): EventSource => {
     try {
       const data = JSON.parse((ev as MessageEvent).data) as string
       handlers.onLog?.(data)
+    } catch {}
+  })
+  es.addEventListener('qr', (ev) => {
+    try {
+      const data = JSON.parse((ev as MessageEvent).data) as string
+      handlers.onQr?.(data)
     } catch {}
   })
   return es

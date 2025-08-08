@@ -1,12 +1,39 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button, Group, Image, Stack } from '@mantine/core'
 import { modals } from '@mantine/modals'
 import { notifications } from '@mantine/notifications'
 import { IconPlayerPlay, IconQrcode } from '@tabler/icons-react'
+import { connectEvents, type BotStatus } from '../api'
 import { requestQr, restartBot, resetAuthAndRestart } from '../api'
 
 const ControlPanel: React.FC = () => {
   const [qr, setQr] = useState<string>('')
+  const [modalId, setModalId] = useState<string | null>(null)
+
+  useEffect(() => {
+    const es = connectEvents({
+      onStatus: (s: BotStatus) => {
+        if (s.state === 'ready' && modalId) {
+          modals.close(modalId)
+          setModalId(null)
+        }
+      },
+      onQr: (dataUrl: string) => {
+        setQr(dataUrl)
+        if (!modalId) {
+          const id = modals.open({
+            title: 'Scan to authenticate',
+            children: <Image src={dataUrl} alt="QR" w={280} h={280} fit="contain" radius="md" />,
+            centered: true,
+            size: 'md',
+            onClose: () => setModalId(null),
+          })
+          setModalId(id)
+        }
+      },
+    })
+    return () => es.close()
+  }, [modalId])
 
   const handleRestart = async () => {
     try {
@@ -24,12 +51,14 @@ const ControlPanel: React.FC = () => {
       const code = await requestQr()
       setQr(code)
       if (code) {
-        modals.open({
+        const id = modals.open({
           title: 'Scan to authenticate',
           children: <Image src={code} alt="QR" w={280} h={280} fit="contain" radius="md" />,
           centered: true,
           size: 'md',
+          onClose: () => setModalId(null),
         })
+        setModalId(id)
       }
     } catch (err) {
       // eslint-disable-next-line no-console
