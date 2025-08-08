@@ -45,6 +45,15 @@ test('wrapText handles text containing newline characters', () => {
   }
 });
 
+test('wrapText respects explicit newlines even without wrapping', () => {
+  const service = new TextToImageService();
+  const ctx = createContext();
+  const text = 'hey\nhey\nhey';
+  const maxWidth = 1000; // Large enough so no wrapping occurs
+  const lines: string[] = (service as any).wrapText(ctx, text, maxWidth);
+  assert.deepStrictEqual(lines, ['hey', 'hey', 'hey']);
+});
+
 test('getFontFamily includes emoji fallbacks when custom fonts are registered', () => {
   const service = new TextToImageService();
   const ltrFamily = (service as any).getFontFamily('ltr');
