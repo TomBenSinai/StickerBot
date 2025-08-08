@@ -121,11 +121,22 @@ export class StickerBot implements IBotService {
   private async handleMessageReply(message: Message, isGroup: boolean): Promise<void> {
     const processedData = await this.getProcessedData(message, isGroup);
     if (processedData) {
-      const options = processedData.stickerOptions || this.getStickerOptions();
+      const options = this.mergeStickerOptions(processedData.stickerOptions);
       console.log(clc.cyan(`Sending sticker with options:`, JSON.stringify(options, null, 2)));
       await message.reply(processedData.media, undefined, options);
       await this.incrementStickerCount();
     }
+  }
+
+  private mergeStickerOptions(overrides?: MessageSendOptions): MessageSendOptions {
+    const base = this.getStickerOptions();
+    if (!overrides) return base;
+
+    const sanitized = Object.fromEntries(
+      Object.entries(overrides).filter(([, value]) => value !== undefined)
+    ) as MessageSendOptions;
+
+    return { ...base, ...sanitized };
   }
 
   private async handleMessageError(message: Message, err: any): Promise<void> {
