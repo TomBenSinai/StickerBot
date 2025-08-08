@@ -9,3 +9,4 @@ node_modules/
 dist/
 assets/fonts/NotoColorEmoji.ttf
 
+.sticker-count
