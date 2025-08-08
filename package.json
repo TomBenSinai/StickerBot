@@ -17,7 +17,7 @@
     "setup:verify": "npm run setup verify",
     "setup:scripts": "npm run setup scripts",
     "lint": "tsc --noEmit",
-    "test": "node --test --require ts-node/register tests/**/*.test.ts"
+    "test": "node --test --require ts-node/register tests/*.test.ts"
   },
   "author": "",
   "license": "ISC",
