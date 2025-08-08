@@ -22,30 +22,18 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "axios": "^1.6.8",
-    "canvas": "^3.1.0",
+    "canvas": "^3.1.2",
     "cli-color": "^2.0.4",
-    "commander": "^12.0.0",
     "direction": "^2.0.1",
-    "emoji-datasource": "^15.1.2",
-    "ffmpeg": "^0.0.4",
-    "from": "^0.1.7",
-    "fs": "^0.0.1-security",
-    "image-stroke": "^0.1.1",
-    "import": "^0.0.6",
     "qrcode-terminal": "^0.12.0",
-    "sharp": "^0.33.3",
-    "whatsapp-web.js": "^1.30.0"
+    "sharp": "^0.34.3",
+    "whatsapp-web.js": "^1.31.0"
   },
   "devDependencies": {
-    "@types/axios": "^0.9.36",
     "@types/cli-color": "^2.0.6",
-    "@types/commander": "^2.12.0",
-    "@types/from": "^0.1.32",
-    "@types/node": "^24.0.3",
+    "@types/node": "^24.2.0",
     "@types/qrcode-terminal": "^0.12.2",
-    "@types/sharp": "^0.31.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.2"
   }
 }
