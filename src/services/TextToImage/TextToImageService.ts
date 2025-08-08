@@ -188,35 +188,46 @@ export class TextToImageService implements ITextToImageService {
   }
 
   private wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
-    if (ctx.measureText(text).width <= maxWidth) {
-      return [text];
-    }
-
-    const words = text.split(/\s+/);
     const lines: string[] = [];
-    let currentLine = '';
+    const paragraphs = text.split(/\r?\n/);
 
-    for (const word of words) {
-      const testLine = currentLine ? `${currentLine} ${word}` : word;
-      
-      if (ctx.measureText(testLine).width <= maxWidth) {
-        currentLine = testLine;
-      } else {
-        // If current line has content, push it and start new line with current word
-        if (currentLine) {
-          lines.push(currentLine);
-          currentLine = word;
+    for (const paragraph of paragraphs) {
+      // Preserve empty lines from consecutive or trailing newlines
+      if (paragraph === '') {
+        lines.push('');
+        continue;
+      }
+
+      if (ctx.measureText(paragraph).width <= maxWidth) {
+        lines.push(paragraph);
+        continue;
+      }
+
+      const words = paragraph.split(/\s+/);
+      let currentLine = '';
+
+      for (const word of words) {
+        const testLine = currentLine ? `${currentLine} ${word}` : word;
+
+        if (ctx.measureText(testLine).width <= maxWidth) {
+          currentLine = testLine;
         } else {
-          // Single word is too long, put it on its own line anyway
-          lines.push(word);
-          currentLine = '';
+          // If current line has content, push it and start new line with current word
+          if (currentLine) {
+            lines.push(currentLine);
+            currentLine = word;
+          } else {
+            // Single word is too long, put it on its own line anyway
+            lines.push(word);
+            currentLine = '';
+          }
         }
       }
-    }
 
-    // Add the last line if it has content
-    if (currentLine) {
-      lines.push(currentLine);
+      // Add the last line of the paragraph if it has content
+      if (currentLine) {
+        lines.push(currentLine);
+      }
     }
 
     return lines.length > 0 ? lines : [text];
