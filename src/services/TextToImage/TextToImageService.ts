@@ -147,9 +147,13 @@ export class TextToImageService implements ITextToImageService {
       const totalHeight = bestLines.length * lineHeight;
       let y = (canvas.height - totalHeight) / 2 + lineHeight / 2;
 
-      // Draw each line
+      // Draw each line with stroke outline and colored emoji fill
+      ctx.lineJoin = "round";
+      ctx.miterLimit = 2;
       bestLines.forEach((line) => {
+        ctx.textDrawingMode = "path";
         ctx.strokeText(line, canvas.width / 2, y);
+        ctx.textDrawingMode = "glyph";
         ctx.fillText(line, canvas.width / 2, y);
         y += lineHeight;
       });
