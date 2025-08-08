@@ -22,11 +22,13 @@ const ControlPanel: React.FC = () => {
   }
 
   return (
-    <div>
-      <button onClick={handleRestart}>Restart Bot</button>
-      <button onClick={handleQr}>Request QR</button>
+    <div className="controls">
+      <div className="buttonRow">
+        <button className="primary" onClick={handleRestart}>Restart Bot</button>
+        <button className="secondary" onClick={handleQr}>Request QR</button>
+      </div>
       {qr && (
-        <div>
+        <div className="qrPreview">
           <img src={qr} alt="QR" />
         </div>
       )}
