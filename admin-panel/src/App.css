@@ -1,0 +1,17 @@
+#root {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.logs {
+  background: #f0f0f0;
+  padding: 1rem;
+  height: 200px;
+  overflow-y: auto;
+  text-align: left;
+}
+
+section {
+  margin-bottom: 2rem;
+}
