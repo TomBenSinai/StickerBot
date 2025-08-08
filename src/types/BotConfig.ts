@@ -22,7 +22,8 @@ export interface StickerOptions {
 
 export interface IBotService {
   start(): Promise<void>;
-  stop(): Promise<void>;
+  stop(exit?: boolean): Promise<void>;
+  restart(): Promise<void>;
   handleMessage(message: any): Promise<void>;
 }
 
