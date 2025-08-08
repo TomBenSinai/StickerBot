@@ -68,7 +68,7 @@ export class TextToImageService implements ITextToImageService {
   async generateImage(text: string): Promise<string> {
     try {
       const canvas = createCanvas(this.canvasWidth, this.canvasHeight);
-      const ctx = canvas.getContext("2d") as any;
+      const ctx = canvas.getContext("2d");
 
       // Detect text direction
       const textDirection = direction(text);
