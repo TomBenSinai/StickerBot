@@ -2,17 +2,20 @@ export interface LogsResponse {
   logs: string[]
 }
 
-export const fetchLogs = async (): Promise<string[]> => {
-  const response = await fetch('/api/logs')
-  if (!response.ok) {
-    throw new Error('Failed to fetch logs')
-  }
-  const data: LogsResponse = await response.json()
-  return data.logs
+export type BotState = 'starting' | 'ready' | 'restarting' | 'error'
+export interface BotStatus {
+  state: BotState
+  since: string
+  message?: string
 }
 
 export const restartBot = async (): Promise<void> => {
   await fetch('/api/restart', { method: 'POST' })
+}
+
+export const resetAuthAndRestart = async (): Promise<void> => {
+  const response = await fetch('/api/reset-auth', { method: 'POST' })
+  if (!response.ok) throw new Error('Failed to reset auth and restart')
 }
 
 export interface QrResponse {
@@ -26,4 +29,33 @@ export const requestQr = async (): Promise<string> => {
   }
   const data: QrResponse = await response.json()
   return data.qr
+}
+
+export interface EventsHandlers {
+  onStatus?: (status: BotStatus) => void
+  onLog?: (line: string) => void
+  onLogsBatch?: (lines: string[]) => void
+}
+
+export const connectEvents = (handlers: EventsHandlers): EventSource => {
+  const es = new EventSource('/api/events')
+  es.addEventListener('status', (ev) => {
+    try {
+      const data = JSON.parse((ev as MessageEvent).data) as BotStatus
+      handlers.onStatus?.(data)
+    } catch {}
+  })
+  es.addEventListener('logs', (ev) => {
+    try {
+      const data = JSON.parse((ev as MessageEvent).data) as string[]
+      handlers.onLogsBatch?.(data)
+    } catch {}
+  })
+  es.addEventListener('log', (ev) => {
+    try {
+      const data = JSON.parse((ev as MessageEvent).data) as string
+      handlers.onLog?.(data)
+    } catch {}
+  })
+  return es
 }

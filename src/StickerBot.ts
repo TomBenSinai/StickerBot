@@ -1,5 +1,4 @@
 import { Client, LocalAuth, Message, MessageMedia, MessageSendOptions } from 'whatsapp-web.js';
-import qrcode from 'qrcode-terminal';
 import clc from 'cli-color';
 import sharp from 'sharp';
 
@@ -65,8 +64,6 @@ export class StickerBot implements IBotService {
 
   private handleQR(qr: string): void {
     this.latestQr = qr;
-    console.log(clc.yellow('Please scan the QR code below:'));
-    qrcode.generate(qr, { small: true });
   }
 
   private async handleReady(): Promise<void> {

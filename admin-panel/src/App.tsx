@@ -1,9 +1,10 @@
-import { useState } from 'react'
-import { AppShell, ActionIcon, Button, Card, Container, Grid, Group, SegmentedControl, Stack, Text, TextInput, Title, Tooltip } from '@mantine/core'
+import { useEffect, useState } from 'react'
+import { AppShell, ActionIcon, Badge, Button, Card, Container, Grid, Group, SegmentedControl, Stack, Text, TextInput, Title, Tooltip } from '@mantine/core'
 import { useComputedColorScheme, useMantineColorScheme } from '@mantine/core'
 import { IconMoon, IconSun } from '@tabler/icons-react'
 import ControlPanel from './components/ControlPanel'
 import Logs, { type LogsApi } from './components/Logs'
+import { connectEvents, type BotStatus } from './api'
 
 const ColorSchemeToggle = () => {
   const { setColorScheme } = useMantineColorScheme()
@@ -21,10 +22,28 @@ const ColorSchemeToggle = () => {
   )
 }
 
+const statusColor = (state: BotStatus['state']): string => {
+  switch (state) {
+    case 'ready': return 'green'
+    case 'starting': return 'yellow'
+    case 'restarting': return 'orange'
+    case 'error': return 'red'
+    default: return 'gray'
+  }
+}
+
 const App: React.FC = () => {
   const [filter, setFilter] = useState<string>('')
   const [autoScroll, setAutoScroll] = useState<boolean>(true)
   const [logsApi, setLogsApi] = useState<LogsApi | null>(null)
+  const [status, setStatus] = useState<BotStatus | null>(null)
+
+  useEffect(() => {
+    const es = connectEvents({
+      onStatus: (s) => setStatus(s),
+    })
+    return () => es.close()
+  }, [])
 
   return (
     <AppShell header={{ height: 60 }} padding="md">
@@ -34,7 +53,14 @@ const App: React.FC = () => {
             <Title order={3}>Sticker Bot Admin</Title>
             <Text c="dimmed">Monitor and control the bot</Text>
           </Group>
-          <ColorSchemeToggle />
+          <Group gap="sm">
+            {status && (
+              <Badge color={statusColor(status.state)} variant="light">
+                {status.state}
+              </Badge>
+            )}
+            <ColorSchemeToggle />
+          </Group>
         </Group>
       </AppShell.Header>
       <AppShell.Main>

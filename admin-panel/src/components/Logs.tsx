@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ScrollArea } from '@mantine/core'
 import { AnsiUp } from 'ansi_up'
-import { fetchLogs } from '../api'
+import { connectEvents } from '../api'
 
-const POLL_INTERVAL_MS = 1000
 const BOTTOM_THRESHOLD_PX = 20
 
 export interface LogsApi {
@@ -53,28 +52,12 @@ const Logs: React.FC<LogsProps> = ({ autoScroll = true, filterText = '', onBindA
   }, [evaluateIsAtBottom])
 
   useEffect(() => {
-    let isMounted = true
-
-    const tick = async () => {
-      try {
-        const data = await fetchLogs()
-        if (!isMounted) return
-        setLogs(data)
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error(err)
-      }
-    }
-
-    void tick()
-
-    const id = setInterval(() => {
-      void tick()
-    }, POLL_INTERVAL_MS)
-
+    const es = connectEvents({
+      onLogsBatch: (batch) => setLogs(batch),
+      onLog: (line) => setLogs(prev => [...prev, line].slice(-100)),
+    })
     return () => {
-      isMounted = false
-      clearInterval(id)
+      es.close()
     }
   }, [])
 
@@ -107,7 +90,6 @@ const Logs: React.FC<LogsProps> = ({ autoScroll = true, filterText = '', onBindA
   }, [logs, filterText])
 
   const html = useMemo(() => {
-    // Convert each line separately to preserve line breaks and colors
     return filteredLines.map((line) => ansi.ansi_to_html(line)).join('\n')
   }, [filteredLines])
 

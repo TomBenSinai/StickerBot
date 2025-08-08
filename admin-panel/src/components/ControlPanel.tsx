@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Button, Group, Image, Stack } from '@mantine/core'
 import { modals } from '@mantine/modals'
+import { notifications } from '@mantine/notifications'
 import { IconPlayerPlay, IconQrcode } from '@tabler/icons-react'
-import { requestQr, restartBot } from '../api'
+import { requestQr, restartBot, resetAuthAndRestart } from '../api'
 
 const ControlPanel: React.FC = () => {
   const [qr, setQr] = useState<string>('')
@@ -10,9 +11,11 @@ const ControlPanel: React.FC = () => {
   const handleRestart = async () => {
     try {
       await restartBot()
+      notifications.show({ color: 'green', message: 'Bot restarting...' })
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error(err)
+      notifications.show({ color: 'red', message: 'Failed to restart bot' })
     }
   }
 
@@ -34,11 +37,32 @@ const ControlPanel: React.FC = () => {
     }
   }
 
+  const handleResetAuth = () => {
+    modals.openConfirmModal({
+      title: 'Reset authentication and restart?',
+      children: 'This will delete the .wwebjs_auth folder and restart the bot. You will need to scan a new QR code.',
+      labels: { confirm: 'Reset & restart', cancel: 'Cancel' },
+      confirmProps: { color: 'red' },
+      centered: true,
+      onConfirm: async () => {
+        try {
+          await resetAuthAndRestart()
+          notifications.show({ color: 'green', message: 'Auth reset. Bot restarting...' })
+        } catch (err) {
+          // eslint-disable-next-line no-console
+          console.error(err)
+          notifications.show({ color: 'red', message: 'Failed to reset auth' })
+        }
+      },
+    })
+  }
+
   return (
     <Stack gap="sm">
       <Group wrap="wrap">
         <Button onClick={handleRestart} variant="filled" color="blue" leftSection={<IconPlayerPlay size={16} />}>Restart Bot</Button>
         <Button onClick={handleQr} variant="default" leftSection={<IconQrcode size={16} />}>Request QR</Button>
+        <Button onClick={handleResetAuth} variant="outline" color="red">Reset Auth & Restart</Button>
       </Group>
       {qr && (
         <Image src={qr} alt="QR" w={240} h={240} fit="contain" radius="md" mx="auto" />
