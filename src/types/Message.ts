@@ -17,7 +17,7 @@ export const isSupportedMediaType = (type: string): type is SupportedMediaType =
 }
 
 export const isMediaMessage = (type: string): boolean => {
-  return type === MessageTypes.IMAGE || type === SupportedMediaType.VIDEO;
+  return type === MessageTypes.IMAGE || type === MessageTypes.VIDEO;
 }
 
 export const isTextMessage = (type: string): boolean => {
