@@ -3,6 +3,17 @@ FROM node:18-alpine AS backend-builder
 WORKDIR /app
 COPY package*.json ./
 COPY tsconfig.json ./
+
+# Build deps for node-canvas on Alpine
+RUN apk add --no-cache \
+    build-base \
+    python3 \
+    cairo-dev \
+    pango-dev \
+    jpeg-dev \
+    giflib-dev \
+    librsvg-dev
+
 COPY src ./src
 COPY assets ./assets
 RUN npm ci && npm run build
@@ -26,7 +37,13 @@ RUN apk add --no-cache \
     curl \
     ca-certificates \
     ttf-dejavu \
-    ttf-liberation
+    ttf-liberation \
+    # Runtime deps for node-canvas
+    cairo \
+    pango \
+    jpeg \
+    giflib \
+    librsvg
 
 WORKDIR /app
 
