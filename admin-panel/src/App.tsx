@@ -1,37 +1,13 @@
 import { useEffect, useState } from 'react'
-import { AppShell, ActionIcon, Button, Card, Container, Grid, Group, SegmentedControl, Stack, Text, TextInput, Title, Tooltip, useMantineTheme, rgba } from '@mantine/core'
-import { useComputedColorScheme, useMantineColorScheme } from '@mantine/core'
-import { IconMoon, IconSun } from '@tabler/icons-react'
+import { AppShell, Button, Card, Container, Grid, Group, SegmentedControl, Stack, Text, TextInput, Title, useMantineTheme, rgba } from '@mantine/core'
+import { useComputedColorScheme } from '@mantine/core'
 import ControlPanel from './components/ControlPanel'
 import Logs, { type LogsApi } from './components/Logs'
 import { connectEvents, type BotStatus } from './api'
+import ColorSchemeToggle from './components/ColorSchemeToggle'
+import { statusColor } from './utils/status'
 
-const ColorSchemeToggle = () => {
-  const { setColorScheme } = useMantineColorScheme()
-  const colorScheme = useComputedColorScheme('light', { getInitialValueInEffect: true })
-  return (
-    <Tooltip label={colorScheme === 'light' ? 'Switch to dark' : 'Switch to light'}>
-      <ActionIcon
-        variant="subtle"
-        aria-label="Toggle color scheme"
-        onClick={() => setColorScheme(colorScheme === 'light' ? 'dark' : 'light')}
-      >
-        {colorScheme === 'light' ? <IconMoon size={18} /> : <IconSun size={18} />}
-      </ActionIcon>
-    </Tooltip>
-  )
-}
-
-const statusColor = (state: BotStatus['state'] | 'unknown'): string => {
-  switch (state) {
-    case 'ready': return 'green'
-    case 'starting': return 'yellow'
-    case 'restarting': return 'orange'
-    case 'awaiting-qr': return 'grape'
-    case 'error': return 'red'
-    default: return 'gray'
-  }
-}
+// ColorSchemeToggle and statusColor moved to dedicated component/util
 
 const App: React.FC = () => {
   const [filter, setFilter] = useState<string>('')
