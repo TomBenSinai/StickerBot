@@ -40,7 +40,6 @@ const ControlPanel: React.FC = () => {
       await restartBot()
       notifications.show({ color: 'green', message: 'Bot restarting...' })
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error(err)
       notifications.show({ color: 'red', message: 'Failed to restart bot' })
     }
@@ -61,7 +60,6 @@ const ControlPanel: React.FC = () => {
         setModalId(id)
       }
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error(err)
     }
   }
@@ -78,7 +76,6 @@ const ControlPanel: React.FC = () => {
           await resetAuthAndRestart()
           notifications.show({ color: 'green', message: 'Auth reset. Bot restarting...' })
         } catch (err) {
-          // eslint-disable-next-line no-console
           console.error(err)
           notifications.show({ color: 'red', message: 'Failed to reset auth' })
         }

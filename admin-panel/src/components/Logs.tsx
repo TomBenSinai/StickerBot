@@ -84,7 +84,7 @@ const Logs: React.FC<LogsProps> = ({ autoScroll = true, filterText = '', onBindA
     try {
       const re = new RegExp(filterText, 'i')
       return logs.filter((line) => re.test(line))
-    } catch (_err) {
+    } catch {
       return logs.filter((line) => line.toLowerCase().includes(filterText.toLowerCase()))
     }
   }, [logs, filterText])

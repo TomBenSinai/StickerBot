@@ -44,25 +44,25 @@ export const connectEvents = (handlers: EventsHandlers): EventSource => {
     try {
       const data = JSON.parse((ev as MessageEvent).data) as BotStatus
       handlers.onStatus?.(data)
-    } catch {}
+    } catch { return }
   })
   es.addEventListener('logs', (ev) => {
     try {
       const data = JSON.parse((ev as MessageEvent).data) as string[]
       handlers.onLogsBatch?.(data)
-    } catch {}
+    } catch { return }
   })
   es.addEventListener('log', (ev) => {
     try {
       const data = JSON.parse((ev as MessageEvent).data) as string
       handlers.onLog?.(data)
-    } catch {}
+    } catch { return }
   })
   es.addEventListener('qr', (ev) => {
     try {
       const data = JSON.parse((ev as MessageEvent).data) as string
       handlers.onQr?.(data)
-    } catch {}
+    } catch { return }
   })
   return es
 }
