@@ -4,6 +4,7 @@ import { BotFactory } from './BotFactory';
 import clc from 'cli-color';
 import path from 'node:path';
 import { rm as remove } from 'node:fs/promises';
+import fs from 'node:fs';
 
 const logs: string[] = [];
 const sseClients: Response[] = [];
@@ -87,6 +88,13 @@ async function main(): Promise<void> {
 
     const app = express();
 
+    // Static serving for admin panel if build is present
+    const publicDir = path.resolve(process.cwd(), 'public');
+    const indexPath = path.join(publicDir, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      app.use(express.static(publicDir));
+    }
+
     // Watch for QR changes periodically and broadcast
     setInterval(async () => {
       try {
@@ -94,13 +102,10 @@ async function main(): Promise<void> {
         if (qr && qr !== lastQrSent) {
           const dataUrl = await toDataURL(qr);
           lastQrSent = qr;
-          lastAwaitingAt = Date.now();
           updateStatus('awaiting-qr', 'Waiting for scan');
           broadcast('qr', dataUrl);
         }
-        // Safety: if we've been awaiting-qr for a long time but no new QR and not ready, nudge status
         if (status.state === 'awaiting-qr' && lastAwaitingAt && Date.now() - lastAwaitingAt > 120000) {
-          // 2 minutes elapsed; re-emit status to keep UI fresh
           broadcast('status', status);
         }
       } catch (e) {
@@ -136,7 +141,6 @@ async function main(): Promise<void> {
       lastQrSent = null;
       bot.clearLatestQr();
       await bot.restart();
-      // Await QR or ready via logs
       res.sendStatus(200);
     });
 
@@ -148,7 +152,6 @@ async function main(): Promise<void> {
         const authDir = path.resolve(process.cwd(), '.wwebjs_auth');
         await remove(authDir, { recursive: true, force: true });
         await bot.restart();
-        // Await QR or ready via logs
         res.sendStatus(200);
       } catch (err) {
         console.error(clc.red('Failed to reset auth and restart bot:'), err);
@@ -166,6 +169,14 @@ async function main(): Promise<void> {
       const dataUrl = await toDataURL(qr);
       res.json({ qr: dataUrl });
     });
+
+    // SPA fallback: serve index.html for non-API GETs if admin panel exists
+    if (fs.existsSync(indexPath)) {
+      app.get('*', (req, res) => {
+        if (req.path.startsWith('/api')) return res.status(404).end();
+        res.sendFile(indexPath);
+      });
+    }
 
     const port = Number(process.env.PORT) || 3000;
     app.listen(port, () => {
