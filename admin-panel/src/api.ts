@@ -36,6 +36,7 @@ export interface EventsHandlers {
   onLog?: (line: string) => void
   onLogsBatch?: (lines: string[]) => void
   onQr?: (dataUrl: string) => void
+  onStickerCount?: (count: number) => void
 }
 
 export const connectEvents = (handlers: EventsHandlers): EventSource => {

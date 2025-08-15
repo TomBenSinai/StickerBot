@@ -5,6 +5,7 @@ import clc from 'cli-color';
 import path from 'node:path';
 import { rm as remove } from 'node:fs/promises';
 import fs from 'node:fs';
+import { loadStickerCount } from './utils/StickerCounter';
 
 const logs: string[] = [];
 const sseClients: Response[] = [];
@@ -114,7 +115,7 @@ async function main(): Promise<void> {
     }, 1000);
 
     // SSE endpoint that streams status and logs
-    app.get('/api/events', (req: Request, res: Response) => {
+    app.get('/api/events', async (req: Request, res: Response) => {
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
@@ -125,6 +126,7 @@ async function main(): Promise<void> {
       // Send current status and recent logs on connect
       sendSse(res, 'status', status);
       sendSse(res, 'logs', logs);
+      sendSse(res, 'sticker-count', await loadStickerCount());
 
       const onClose = () => {
         const idx = sseClients.indexOf(res);
