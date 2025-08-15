@@ -9,6 +9,9 @@ import { TextToImageService } from './services/TextToImage/TextToImageService';
 import { StringTooLongForSticker } from './utils';
 import { ProcessedMessage, isMediaMessage, isTextMessage, isStickerMessage } from './types/Message';
 import { loadStickerCount, saveStickerCount } from './utils/StickerCounter';
+import { AdminService } from './services/Admin/AdminService';
+import { MentionService } from './services/Mention/MentionService';
+import { GroupChat } from 'whatsapp-web.js';
 
 export class StickerBot implements IBotService {
   private client: Client;
@@ -107,6 +110,14 @@ export class StickerBot implements IBotService {
   private async processIncomingMessage(message: Message): Promise<void> {
     try {
       const chat = await message.getChat();
+      
+      // First, handle admin commands independently of mention gating
+      if (chat.isGroup) {
+        const adminCommandHandled = await this.handleAdminCommands(message, chat as GroupChat);
+        if (adminCommandHandled) {
+          return;
+        }
+      }
       
       const shouldProcess = await this.shouldProcessMessage(message, chat.isGroup);
       
@@ -313,5 +324,40 @@ export class StickerBot implements IBotService {
 
   isClientReady(): boolean {
     return this.isRunning;
+  }
+
+  // Admin tools integration
+  private adminService: AdminService = new AdminService();
+  private mentionService: MentionService = new MentionService({});
+
+  private async handleAdminCommands(message: Message, chat: GroupChat): Promise<boolean> {
+    const body = (message.body || '').trim();
+    if (!body) return false;
+
+    const normalized = body.toLowerCase();
+
+    const isMentionAllCommand = (
+      normalized.startsWith('!all') ||
+      normalized.startsWith('/all') ||
+      normalized.startsWith('@all') ||
+      normalized.startsWith('!mention all') ||
+      normalized.startsWith('/mention all') ||
+      normalized.startsWith('mention all') ||
+      normalized === '!mention' ||
+      normalized === '/mention'
+    );
+
+    if (!isMentionAllCommand) {
+      return false;
+    }
+
+    const isUserAdmin = await this.adminService.isAdmin(chat, message);
+    if (!isUserAdmin) {
+      await message.reply('Only group admins can mention everyone.');
+      return true; // handled
+    }
+
+    await this.mentionService.mentionEveryone(chat);
+    return true;
   }
 } 
