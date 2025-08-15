@@ -1,5 +1,4 @@
 import { Client, LocalAuth, Message, MessageMedia, MessageSendOptions } from 'whatsapp-web.js';
-import qrcode from 'qrcode-terminal';
 import clc from 'cli-color';
 import sharp from 'sharp';
 
@@ -21,6 +20,7 @@ export class StickerBot implements IBotService {
   private messageQueue: Message[] = [];
   private isProcessingQueue: boolean = false;
   private stickerCount: number = 0;
+  private latestQr: string | null = null;
 
   constructor(userConfig: BotConfig = {}) {
     this.finalConfig = mergeWithDefaults(userConfig);
@@ -63,12 +63,13 @@ export class StickerBot implements IBotService {
   }
 
   private handleQR(qr: string): void {
-    console.log(clc.yellow('Please scan the QR code below:'));
-    qrcode.generate(qr, { small: true });
+    this.latestQr = qr;
   }
 
   private async handleReady(): Promise<void> {
     console.log(clc.green("Client is up and running!"));
+    // Clear any previously cached QR to avoid re-emitting stale codes after successful auth
+    this.latestQr = null;
     this.stickerCount = await loadStickerCount();
     await this.client.setStatus(`Stickers made: ${this.stickerCount}`);
     await this.retrieveUnreadMessages();
@@ -294,7 +295,7 @@ export class StickerBot implements IBotService {
     }
   }
 
-  async stop(): Promise<void> {
+  async stop(exit: boolean = true): Promise<void> {
     if (!this.isRunning) {
       return;
     }
@@ -304,14 +305,34 @@ export class StickerBot implements IBotService {
       await this.client.destroy();
       this.isRunning = false;
       console.log(clc.green('Bot stopped successfully'));
-      process.exit(0);
+      if (exit) {
+        process.exit(0);
+      }
     } catch (err) {
       console.error(clc.red('Error stopping bot:'), err);
-      process.exit(1);
+      if (exit) {
+        process.exit(1);
+      }
     }
+  }
+
+  async restart(): Promise<void> {
+    console.log(clc.yellow('Restarting StickerBot...'));
+    await this.stop(false);
+    this.client = this.initializeClient();
+    this.setupEventHandlers();
+    await this.start();
+  }
+
+  getLatestQr(): string | null {
+    return this.latestQr;
+  }
+
+  clearLatestQr(): void {
+    this.latestQr = null;
   }
 
   isClientReady(): boolean {
     return this.isRunning;
   }
-} 
+}

@@ -1,4 +1,4 @@
-.PHONY: help install setup build dev start clean test lint format deps setup-chrome setup-ffmpeg verify docker
+.PHONY: help install setup build dev start clean test lint format deps setup-chrome setup-ffmpeg verify docker docker-build docker-run docker-dev
 
 install: deps setup
 	@echo "Installation completed!"
@@ -45,14 +45,16 @@ format:
 test: 
 	@npm test
 
-docker-build:   
-	@docker build -t stickerbot .
+# Docker
+
+docker-build:
+	@docker build -t stickerbot:latest .
 
 docker-run: docker-build
-	@docker run -it --rm stickerbot
+	@docker run -it --rm -p 3000:3000 -v $(PWD)/.wwebjs_auth:/app/.wwebjs_auth --name stickerbot stickerbot:latest
 
 docker-dev: docker-build
-	@docker run -it --rm -e NODE_ENV=development stickerbot
+	@docker run -it --rm -e NODE_ENV=development -p 3000:3000 -v $(PWD)/.wwebjs_auth:/app/.wwebjs_auth --name stickerbot-dev stickerbot:latest
 
 clean-all: clean
 	@rm -rf node_modules
