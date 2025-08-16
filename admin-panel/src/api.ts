@@ -65,5 +65,11 @@ export const connectEvents = (handlers: EventsHandlers): EventSource => {
       handlers.onQr?.(data)
     } catch { return }
   })
+  es.addEventListener('sticker-count', (ev) => {
+    try {
+      const data = JSON.parse((ev as MessageEvent).data) as number
+      handlers.onStickerCount?.(data)
+    } catch { return }
+  })
   return es
 }

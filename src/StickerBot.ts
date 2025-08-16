@@ -8,6 +8,7 @@ import { TextToImageService } from './services/TextToImage/TextToImageService';
 import { StringTooLongForSticker } from './utils';
 import { ProcessedMessageMedia, isMediaMessage, isTextMessage, isStickerMessage } from './types/Message';
 import { loadStickerCount, saveStickerCount } from './utils/StickerCounter';
+import { emitStickerCountUpdated } from './utils/EventBus';
 
 export class StickerBot implements IBotService {
   private client: Client;
@@ -240,6 +241,7 @@ export class StickerBot implements IBotService {
     this.stickerCount += 1;
     await saveStickerCount(this.stickerCount);
     await this.client.setStatus(`Stickers made: ${this.stickerCount}`);
+    emitStickerCountUpdated(this.stickerCount);
   }
 
   private async retrieveUnreadMessages(): Promise<void> {
