@@ -7,20 +7,19 @@ import { connectEvents, type BotStatus } from './api'
 import ColorSchemeToggle from './components/ColorSchemeToggle'
 import { statusColor } from './utils/status'
 
-// ColorSchemeToggle and statusColor moved to dedicated component/util
-
 const App: React.FC = () => {
   const [filter, setFilter] = useState<string>('')
   const [autoScroll, setAutoScroll] = useState<boolean>(true)
   const [logsApi, setLogsApi] = useState<LogsApi | null>(null)
   const [status, setStatus] = useState<BotStatus | null>(null)
-
+  const [stickerCount, setStickerCount] = useState<number>(0)
   const theme = useMantineTheme()
   const colorScheme = useComputedColorScheme('light', { getInitialValueInEffect: true })
 
   useEffect(() => {
     const es = connectEvents({
       onStatus: (s) => setStatus(s),
+      onStickerCount: (c) => setStickerCount(c),
     })
     return () => es.close()
   }, [])
@@ -68,6 +67,7 @@ const App: React.FC = () => {
                   {sinceText && (
                     <Text size="sm" c="dimmed">since {sinceText}</Text>
                   )}
+                  <Text size="sm" c="dimmed">Stickers made: {stickerCount}</Text>
                 </Stack>
               </Card>
             </Grid.Col>

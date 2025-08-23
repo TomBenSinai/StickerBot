@@ -6,7 +6,7 @@ import { BotConfig, IBotService, StickerOptions } from './types/BotConfig';
 import { mergeWithDefaults, ResolvedBotConfig } from './config/DefaultConfig';
 import { TextToImageService } from './services/TextToImage/TextToImageService';
 import { StringTooLongForSticker } from './utils';
-import { ProcessedMessage, isMediaMessage, isTextMessage, isStickerMessage } from './types/Message';
+import { ProcessedMessageMedia, isMediaMessage, isTextMessage, isStickerMessage } from './types/Message';
 import { loadStickerCount, saveStickerCount } from './utils/StickerCounter';
 
 export class StickerBot implements IBotService {
@@ -108,7 +108,6 @@ export class StickerBot implements IBotService {
   private async processIncomingMessage(message: Message): Promise<void> {
     try {
       const chat = await message.getChat();
-      
       const shouldProcess = await this.shouldProcessMessage(message, chat.isGroup);
       
       if (shouldProcess) {
@@ -123,7 +122,6 @@ export class StickerBot implements IBotService {
     const processedData = await this.getProcessedData(message, isGroup);
     if (processedData) {
       const options = processedData.stickerOptions || this.getStickerOptions();
-      console.log(clc.cyan(`Sending sticker with options:`, JSON.stringify(options, null, 2)));
       await message.reply(processedData.media, undefined, options);
       await this.incrementStickerCount();
     }
@@ -174,7 +172,7 @@ export class StickerBot implements IBotService {
     });
   }
 
-  private async getProcessedData(message: Message, isGroup: boolean): Promise<ProcessedMessage | undefined> {
+  private async getProcessedData(message: Message, isGroup: boolean): Promise<ProcessedMessageMedia | undefined> {
     try {
       const messageToProcess = isGroup ? await message.getQuotedMessage() : message;
       return this.processMessage(messageToProcess);
@@ -184,34 +182,38 @@ export class StickerBot implements IBotService {
     }
   }
 
-  private async processMessage(message: Message): Promise<ProcessedMessage | undefined> {
+  private async processMessage(message: Message): Promise<ProcessedMessageMedia | undefined> {
     const stickerOptions = this.getStickerOptions();
+
+    let finalMedia: ProcessedMessageMedia | undefined = undefined;
 
     try {
       if (isMediaMessage(message.type)) {
-        return await this.processMediaMessage(message, stickerOptions);
+        const media = await this.processMediaMessage(message);
+        finalMedia = { media: media, stickerOptions: stickerOptions };
       }
       
       if (isTextMessage(message.type)) {
-        return await this.processTextMessage(message, stickerOptions);
+        const media = await this.processTextMessage(message);
+        finalMedia = { media: media, stickerOptions: stickerOptions };
       }
       
       if (isStickerMessage(message.type)) {
-        return await this.processStickerMessage(message);
+        finalMedia = await this.processStickerMessage(message);
       }
       
-      return undefined;
+      return finalMedia;
     } catch (err) {
       throw err;
     }
   }
 
-  private async processMediaMessage(message: Message, stickerOptions: MessageSendOptions): Promise<ProcessedMessage> {
+  private async processMediaMessage(message: Message): Promise<MessageMedia> {
     const media = await message.downloadMedia();
-    return { media, stickerOptions };
+    return media;
   }
 
-  private async processTextMessage(message: Message, stickerOptions: MessageSendOptions): Promise<ProcessedMessage> {
+  private async processTextMessage(message: Message): Promise<MessageMedia> {
     const text = message.body;
     const maxLength = this.finalConfig.maxTextLength;
     
@@ -221,10 +223,10 @@ export class StickerBot implements IBotService {
 
     const stickerData = await this.textService.generateImage(text);
     const media = new MessageMedia("image/png", stickerData, "sticker.png");
-    return { media, stickerOptions };
+    return media;
   }
 
-  private async processStickerMessage(message: Message): Promise<ProcessedMessage> {
+  private async processStickerMessage(message: Message): Promise<ProcessedMessageMedia> {
     const media = await message.downloadMedia();
     const webpBuffer = Buffer.from(media.data, 'base64');
     const pngBuffer = await sharp(webpBuffer).png().toBuffer();

@@ -5,6 +5,7 @@ import clc from 'cli-color';
 import path from 'node:path';
 import { rm as remove } from 'node:fs/promises';
 import fs from 'node:fs';
+import { loadStickerCount } from './utils/StickerCounter';
 
 const logs: string[] = [];
 const sseClients: Response[] = [];
@@ -47,6 +48,7 @@ function updateStatus(newState: BotState, message?: string): void {
 
 let lastQrSent: string | null = null;
 let lastAwaitingAt: number | null = null;
+let lastStickerCount: number | null = null;
 
 const record = (type: 'log' | 'error', args: unknown[]): void => {
   const message = args.map(arg => typeof arg === 'string' ? arg : JSON.stringify(arg)).join(' ');
@@ -95,7 +97,7 @@ async function main(): Promise<void> {
       app.use(express.static(publicDir));
     }
 
-    // Watch for QR changes periodically and broadcast
+    // Watch for QR changes and sticker-count changes periodically and broadcast
     setInterval(async () => {
       try {
         const qr = bot.getLatestQr();
@@ -108,13 +110,26 @@ async function main(): Promise<void> {
         if (status.state === 'awaiting-qr' && lastAwaitingAt && Date.now() - lastAwaitingAt > 120000) {
           broadcast('status', status);
         }
+
+        // Broadcast updated sticker count if it changed
+        try {
+          const currentCount = await loadStickerCount();
+          if (lastStickerCount === null) {
+            lastStickerCount = currentCount;
+          } else if (currentCount !== lastStickerCount) {
+            lastStickerCount = currentCount;
+            broadcast('sticker-count', currentCount);
+          }
+        } catch {
+          // ignore count read errors
+        }
       } catch (e) {
         // ignore
       }
     }, 1000);
 
     // SSE endpoint that streams status and logs
-    app.get('/api/events', (req: Request, res: Response) => {
+    app.get('/api/events', async (req: Request, res: Response) => {
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
@@ -125,6 +140,7 @@ async function main(): Promise<void> {
       // Send current status and recent logs on connect
       sendSse(res, 'status', status);
       sendSse(res, 'logs', logs);
+      sendSse(res, 'sticker-count', await loadStickerCount());
 
       const onClose = () => {
         const idx = sseClients.indexOf(res);

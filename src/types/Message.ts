@@ -1,6 +1,6 @@
 import { MessageMedia, MessageSendOptions, MessageTypes } from "whatsapp-web.js";
 
-export type ProcessedMessage = {
+export type ProcessedMessageMedia = {
   media: MessageMedia;
   stickerOptions?: MessageSendOptions;
 }
@@ -30,5 +30,5 @@ export const isStickerMessage = (type: string): boolean => {
 
 export type MessageProcessor = {
   canProcess: (messageType: string) => boolean;
-  process: (message: any, options?: any) => Promise<ProcessedMessage>;
+  process: (message: any, options?: any) => Promise<ProcessedMessageMedia>;
 };

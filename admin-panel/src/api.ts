@@ -36,6 +36,7 @@ export interface EventsHandlers {
   onLog?: (line: string) => void
   onLogsBatch?: (lines: string[]) => void
   onQr?: (dataUrl: string) => void
+  onStickerCount?: (count: number) => void
 }
 
 export const connectEvents = (handlers: EventsHandlers): EventSource => {
@@ -62,6 +63,12 @@ export const connectEvents = (handlers: EventsHandlers): EventSource => {
     try {
       const data = JSON.parse((ev as MessageEvent).data) as string
       handlers.onQr?.(data)
+    } catch { return }
+  })
+  es.addEventListener('sticker-count', (ev) => {
+    try {
+      const data = JSON.parse((ev as MessageEvent).data) as number
+      handlers.onStickerCount?.(data)
     } catch { return }
   })
   return es
