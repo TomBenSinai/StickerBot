@@ -135,6 +135,10 @@ export class StickerBot implements IBotService {
     }
   }
 
+  private normalizeWhatsAppId(id: string): string {
+    return id.replace(/@c\.us$/, '').replace(/@g\.us$/, '');
+  }
+
   private async shouldProcessMessage(message: Message, isGroup: boolean): Promise<boolean> {
     if (!isGroup) return true;
     
@@ -142,8 +146,9 @@ export class StickerBot implements IBotService {
     const clientId = this.client.info?.wid?._serialized || this.client.info?.me?._serialized;
     
     if (!clientId) return false;
-    
-    return mentions.some(mention => mention === clientId);
+
+    const normalizedClient = this.normalizeWhatsAppId(clientId);
+    return mentions.some(mention => this.normalizeWhatsAppId(mention) === normalizedClient);
   }
 
 
@@ -174,7 +179,8 @@ export class StickerBot implements IBotService {
 
   private async getProcessedData(message: Message, isGroup: boolean): Promise<ProcessedMessageMedia | undefined> {
     try {
-      const messageToProcess = isGroup ? await message.getQuotedMessage() : message;
+      const quoted = isGroup ? await message.getQuotedMessage().catch(() => undefined) : undefined;
+      const messageToProcess = quoted ?? message;
       return this.processMessage(messageToProcess);
     } catch (err) {
       console.error('Error processing message data:', err);
@@ -250,7 +256,7 @@ export class StickerBot implements IBotService {
           for (const message of unreadMessages) {
             await this.processIncomingMessage(message);
           }
-          chat.sendSeen();
+          await chat.sendSeen();
         }
       }
     } catch (err) {
