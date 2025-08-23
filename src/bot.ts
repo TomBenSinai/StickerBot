@@ -6,6 +6,7 @@ import path from 'node:path';
 import { rm as remove } from 'node:fs/promises';
 import fs from 'node:fs';
 import { loadStickerCount } from './utils/StickerCounter';
+import { onStickerCountUpdated } from './utils/EventBus';
 
 const logs: string[] = [];
 const sseClients: Response[] = [];
@@ -150,6 +151,11 @@ async function main(): Promise<void> {
 
       req.on('close', onClose);
       req.on('error', onClose);
+    });
+
+    // Broadcast sticker count updates in real-time
+    onStickerCountUpdated((count) => {
+      broadcast('sticker-count', count);
     });
 
     app.post('/api/restart', async (_req: Request, res: Response) => {
