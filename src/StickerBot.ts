@@ -199,8 +199,7 @@ export class StickerBot implements IBotService {
       }
       
       if (isStickerMessage(message.type)) {
-        const media = await this.processStickerMessage(message);
-        finalMedia = { media: media, stickerOptions: {...stickerOptions, sendMediaAsSticker: false} };
+        finalMedia = await this.processStickerMessage(message);
       }
       
       return finalMedia;
@@ -227,13 +226,13 @@ export class StickerBot implements IBotService {
     return media;
   }
 
-  private async processStickerMessage(message: Message): Promise<MessageMedia> {
+  private async processStickerMessage(message: Message): Promise<ProcessedMessageMedia> {
     const media = await message.downloadMedia();
     const webpBuffer = Buffer.from(media.data, 'base64');
     const pngBuffer = await sharp(webpBuffer).png().toBuffer();
     const pngBase64 = pngBuffer.toString('base64');
     const image = new MessageMedia('image/png', pngBase64, 'sticker.png');
-    return image;
+    return { media: image, stickerOptions: { sendMediaAsSticker: false } };
   }
 
   private async incrementStickerCount(): Promise<void> {
