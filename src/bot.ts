@@ -48,6 +48,7 @@ function updateStatus(newState: BotState, message?: string): void {
 
 let lastQrSent: string | null = null;
 let lastAwaitingAt: number | null = null;
+let lastStickerCount: number | null = null;
 
 const record = (type: 'log' | 'error', args: unknown[]): void => {
   const message = args.map(arg => typeof arg === 'string' ? arg : JSON.stringify(arg)).join(' ');
@@ -96,7 +97,7 @@ async function main(): Promise<void> {
       app.use(express.static(publicDir));
     }
 
-    // Watch for QR changes periodically and broadcast
+    // Watch for QR changes and sticker-count changes periodically and broadcast
     setInterval(async () => {
       try {
         const qr = bot.getLatestQr();
@@ -108,6 +109,19 @@ async function main(): Promise<void> {
         }
         if (status.state === 'awaiting-qr' && lastAwaitingAt && Date.now() - lastAwaitingAt > 120000) {
           broadcast('status', status);
+        }
+
+        // Broadcast updated sticker count if it changed
+        try {
+          const currentCount = await loadStickerCount();
+          if (lastStickerCount === null) {
+            lastStickerCount = currentCount;
+          } else if (currentCount !== lastStickerCount) {
+            lastStickerCount = currentCount;
+            broadcast('sticker-count', currentCount);
+          }
+        } catch {
+          // ignore count read errors
         }
       } catch (e) {
         // ignore
